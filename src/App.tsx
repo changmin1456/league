@@ -146,7 +146,7 @@ const PERSIST_STATE_KEYS = [
 const DDRAGON_VERSION = '14.24.1'
 const ADMIN_ACCOUNT = {
   id: 'admin',
-  password: 'admin1234',
+  password: '862588',
 }
 
 type AdminProfile = {
