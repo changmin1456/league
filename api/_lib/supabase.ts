@@ -1,21 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+let cachedClient: ReturnType<typeof createClient> | null = null
 
-if (!supabaseUrl) {
-  throw new Error('SUPABASE_URL 환경변수가 설정되지 않았습니다.')
+const getSupabaseAdmin = () => {
+  if (cachedClient) return cachedClient
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl) {
+    throw new Error('SUPABASE_URL 환경변수가 설정되지 않았습니다.')
+  }
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다.')
+  }
+  cachedClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  })
+  return cachedClient
 }
-if (!supabaseServiceRoleKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다.')
-}
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-})
 
 export type MatchStatRow = {
   id?: number
@@ -37,6 +41,7 @@ export type MatchStatRow = {
 }
 
 export const fetchAllMatchStats = async () => {
+  const supabaseAdmin = getSupabaseAdmin()
   const pageSize = 1000
   let from = 0
   const rows: MatchStatRow[] = []
@@ -59,6 +64,7 @@ export const fetchAllMatchStats = async () => {
 }
 
 export const fetchMatchStatsByRiotId = async (riotIdNormalized: string) => {
+  const supabaseAdmin = getSupabaseAdmin()
   const { data, error } = await supabaseAdmin
     .from('match_participant_stats')
     .select(
@@ -71,6 +77,7 @@ export const fetchMatchStatsByRiotId = async (riotIdNormalized: string) => {
 }
 
 export const fetchRecentMatchStats = async (weekAgo: number) => {
+  const supabaseAdmin = getSupabaseAdmin()
   const { data, error } = await supabaseAdmin
     .from('match_participant_stats')
     .select(
@@ -95,6 +102,7 @@ export const fetchRecentMatchStats = async (weekAgo: number) => {
 }
 
 export const upsertMatchStats = async (rows: MatchStatRow[]) => {
+  const supabaseAdmin = getSupabaseAdmin()
   if (rows.length === 0) return
   const { error } = await supabaseAdmin
     .from('match_participant_stats')
@@ -103,6 +111,7 @@ export const upsertMatchStats = async (rows: MatchStatRow[]) => {
 }
 
 export const updateProfileIconByRiotKey = async (riotKey: string, profileIconId: number) => {
+  const supabaseAdmin = getSupabaseAdmin()
   const { error } = await supabaseAdmin
     .from('match_participant_stats')
     .update({ profile_icon_id: profileIconId })
@@ -111,6 +120,7 @@ export const updateProfileIconByRiotKey = async (riotKey: string, profileIconId:
 }
 
 export const readAppStates = async (keys: string[]) => {
+  const supabaseAdmin = getSupabaseAdmin()
   if (keys.length === 0) return {}
   const { data, error } = await supabaseAdmin.from('app_state_store').select('state_key,state_value').in('state_key', keys)
   if (error) throw new Error(error.message)
@@ -124,6 +134,7 @@ export const readAppStates = async (keys: string[]) => {
 }
 
 export const upsertAppStates = async (states: Record<string, string>) => {
+  const supabaseAdmin = getSupabaseAdmin()
   const rows = Object.entries(states)
     .filter(([key, value]) => key.trim() !== '' && typeof value === 'string')
     .map(([key, value]) => ({
