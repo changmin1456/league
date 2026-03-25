@@ -4623,17 +4623,32 @@ select {
   background: #ffffff !important;
   color: #111111 !important;
   -webkit-text-fill-color: #111111 !important;
-  color-scheme: light;
+  color-scheme: light !important;
+  appearance: auto;
+  -webkit-appearance: menulist;
 }
 
-select option {
+select option,
+select optgroup {
   color: #111111 !important;
   background: #ffffff !important;
+  -webkit-text-fill-color: #111111 !important;
 }
 
 select:focus {
   outline: 1px solid #000000;
   outline-offset: 0;
+}
+
+/* Force all known custom select classes to readable colors on any OS theme */
+.login-select,
+.user-info-select,
+.teamselect-inline-select {
+  border-color: #000000 !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  color-scheme: light !important;
 }
 
 .tier-field-row {
