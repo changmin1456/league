@@ -4602,13 +4602,20 @@ body {
 .login-select {
   height: 52px;
   border-radius: 12px;
-  border: 1px solid var(--line-2);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-1);
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #111111;
+  -webkit-text-fill-color: #111111;
+  color-scheme: light;
   padding: 0 14px;
   font-size: 18px;
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
   outline: none;
+}
+
+.login-select option {
+  color: #111111;
+  background: #ffffff;
 }
 
 .tier-field-row {
@@ -4735,6 +4742,19 @@ body {
   font-size: 14px;
   font-weight: 700;
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+.user-info-select {
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #111111;
+  -webkit-text-fill-color: #111111;
+  color-scheme: light;
+}
+
+.user-info-select option {
+  color: #111111;
+  background: #ffffff;
 }
 
 .user-info-list .tier-field-row {
