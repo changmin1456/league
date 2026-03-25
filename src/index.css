@@ -4618,6 +4618,24 @@ body {
   background: #ffffff;
 }
 
+select {
+  border: 1px solid #000000 !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  color-scheme: light;
+}
+
+select option {
+  color: #111111 !important;
+  background: #ffffff !important;
+}
+
+select:focus {
+  outline: 1px solid #000000;
+  outline-offset: 0;
+}
+
 .tier-field-row {
   display: flex;
   gap: 8px;
