@@ -2911,14 +2911,31 @@ function App() {
   const managedProfiles = isAdminSession ? readSignupProfiles() : []
   const adminProfileData = readAdminProfile()
   const approvedProfiles = managedProfiles.filter((profile) => profile.approvalStatus === 'approved')
+  const sortedApprovedProfiles = [...approvedProfiles].sort((left, right) => {
+    const leftRank = left.userType === '운영진' ? 0 : 1
+    const rightRank = right.userType === '운영진' ? 0 : 1
+    if (leftRank !== rightRank) return leftRank - rightRank
+
+    return left.accountLabel.localeCompare(right.accountLabel, 'ko-KR', { sensitivity: 'base' })
+  })
   const pendingProfiles = managedProfiles.filter((profile) => profile.approvalStatus === 'pending')
+  const adminCount = 1
+  const staffCount = approvedProfiles.filter((profile) => profile.userType === '운영진').length
+  const normalCount = approvedProfiles.filter((profile) => profile.userType === '일반').length
+  const totalManagedCount = adminCount + approvedProfiles.length
+  const userTypeCounts: Record<'전체' | '관리자' | '운영진' | '일반', number> = {
+    전체: totalManagedCount,
+    관리자: adminCount,
+    운영진: staffCount,
+    일반: normalCount,
+  }
   const filteredApprovedProfiles =
     userTypeFilter === '전체'
-      ? approvedProfiles
+      ? sortedApprovedProfiles
       : userTypeFilter === '운영진'
-        ? approvedProfiles.filter((profile) => profile.userType === '운영진')
+        ? sortedApprovedProfiles.filter((profile) => profile.userType === '운영진')
         : userTypeFilter === '일반'
-          ? approvedProfiles.filter((profile) => profile.userType === '일반')
+          ? sortedApprovedProfiles.filter((profile) => profile.userType === '일반')
           : []
   const shouldShowAdminCard = userTypeFilter === '전체' || userTypeFilter === '관리자'
 
@@ -3219,7 +3236,7 @@ function App() {
               {authMode === 'signup' && (
                 <>
                   <div className="login-field-group">
-                    <label htmlFor="signup-discord-id">디스코드 아이디</label>
+                    <label htmlFor="signup-discord-id">디스코드</label>
                     <input
                       id="signup-discord-id"
                       value={signupDiscordId}
@@ -5084,14 +5101,19 @@ function App() {
                     className={adminCategory === '유저관리' ? 'is-active' : ''}
                     onClick={() => setAdminCategory('유저관리')}
                   >
-                    유저관리
+                    <span>유저관리</span>
                   </button>
                   <button
                     type="button"
                     className={adminCategory === '가입승인' ? 'is-active' : ''}
                     onClick={() => setAdminCategory('가입승인')}
                   >
-                    가입승인
+                    <span>가입승인</span>
+                    {pendingProfiles.length > 0 && (
+                      <span className="admin-category-badge" aria-label={`가입 대기 ${pendingProfiles.length}명`}>
+                        {pendingProfiles.length}
+                      </span>
+                    )}
                   </button>
                 </div>
               </aside>
@@ -5156,10 +5178,15 @@ function App() {
                           className={userTypeFilter === type ? 'is-active' : ''}
                           onClick={() => setUserTypeFilter(type)}
                         >
-                          {type}
+                          <span>{type}</span>
+                          <span className="admin-type-count">{userTypeCounts[type]}명</span>
                         </button>
                       ))}
                     </div>
+                    <p className="admin-type-summary">
+                      총 인원 {totalManagedCount}명 (관리자 {adminCount}명 / 운영진 {staffCount}명 / 일반 {normalCount}
+                      명)
+                    </p>
 
                     {shouldShowAdminCard && (
                       <div className="admin-user-row">
