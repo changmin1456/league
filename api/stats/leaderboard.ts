@@ -1,8 +1,8 @@
 import type { ServerResponse } from 'node:http'
-import { json, type ApiRequest } from '../_lib/http'
-import { fetchRiot, parseRiotId } from '../_lib/riot'
-import { fetchAllMatchStats, updateProfileIconByRiotKey } from '../_lib/supabase'
-import { buildLeaderboardRows } from '../_lib/stats'
+import { json, type ApiRequest } from '../_lib/http.js'
+import { fetchRiot, parseRiotId } from '../_lib/riot.js'
+import { fetchAllMatchStats, updateProfileIconByRiotKey } from '../_lib/supabase.js'
+import { buildLeaderboardRows } from '../_lib/stats.js'
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
   try {

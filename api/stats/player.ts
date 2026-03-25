@@ -1,8 +1,8 @@
 import type { ServerResponse } from 'node:http'
-import { json, parseUrl, type ApiRequest } from '../_lib/http'
-import { normalizeRiotIdForStorage } from '../_lib/riot'
-import { fetchMatchStatsByRiotId } from '../_lib/supabase'
-import { computeMatchKda } from '../_lib/stats'
+import { json, parseUrl, type ApiRequest } from '../_lib/http.js'
+import { normalizeRiotIdForStorage } from '../_lib/riot.js'
+import { fetchMatchStatsByRiotId } from '../_lib/supabase.js'
+import { computeMatchKda } from '../_lib/stats.js'
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
   try {

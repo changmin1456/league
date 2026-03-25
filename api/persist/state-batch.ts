@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http'
-import { json, parseUrl, readJsonBody, type ApiRequest } from '../_lib/http'
-import { readAppStates, upsertAppStates } from '../_lib/supabase'
+import { json, parseUrl, readJsonBody, type ApiRequest } from '../_lib/http.js'
+import { readAppStates, upsertAppStates } from '../_lib/supabase.js'
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
   try {

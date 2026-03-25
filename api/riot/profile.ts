@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http'
-import { json, parseUrl, type ApiRequest } from '../_lib/http'
-import { fetchRiot, fetchRiotOptional, parseRiotId, type RiotLeagueEntry, type RiotMatch } from '../_lib/riot'
+import { json, parseUrl, type ApiRequest } from '../_lib/http.js'
+import { fetchRiot, fetchRiotOptional, parseRiotId, type RiotLeagueEntry, type RiotMatch } from '../_lib/riot.js'
 
 export default async function handler(req: ApiRequest, res: ServerResponse) {
   try {

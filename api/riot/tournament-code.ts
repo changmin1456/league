@@ -1,5 +1,5 @@
 import type { ServerResponse } from 'node:http'
-import { json, readJsonBody, type ApiRequest } from '../_lib/http'
+import { json, readJsonBody, type ApiRequest } from '../_lib/http.js'
 
 let resolvedTournamentId = (process.env.RIOT_TOURNAMENT_ID ?? '').trim()
 let resolvedProviderId = (process.env.RIOT_TOURNAMENT_PROVIDER_ID ?? '').trim()

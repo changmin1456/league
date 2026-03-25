@@ -1,4 +1,4 @@
-import type { MatchStatRow } from './supabase'
+import type { MatchStatRow } from './supabase.js'
 
 export type LeaderboardRow = {
   riotKey: string
