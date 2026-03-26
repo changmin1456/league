@@ -1336,8 +1336,20 @@ function App() {
       if (!parsed || typeof parsed !== 'object') return
       const record = parsed as Record<string, unknown>
       if (typeof record.userLabel !== 'string' || typeof record.isAdmin !== 'boolean') return
+      const key = record.userLabel.trim().toLowerCase()
+      const elevatedByRole =
+        key !== '' &&
+        readSignupProfiles().some((profile) => {
+          const accountKey = (profile.accountLabel || profile.riotId).trim().toLowerCase()
+          const riotKey = profile.riotId.trim().toLowerCase()
+          return (
+            (accountKey === key || riotKey === key) &&
+            profile.approvalStatus === 'approved' &&
+            profile.userType === '운영진'
+          )
+        })
       setCurrentUserLabel(record.userLabel)
-      setIsAdminSession(record.isAdmin)
+      setIsAdminSession(record.isAdmin || elevatedByRole)
       setIsLoginPage(false)
       setIsUserInfoPage(false)
     } catch {
@@ -2488,9 +2500,10 @@ function App() {
 
     setAuthFeedbackType('success')
     setAuthFeedback('로그인되었습니다.')
+    const canManage = profile.userType === '운영진'
     const session: AuthSession = {
       userLabel: profile.accountLabel || profile.riotId,
-      isAdmin: false,
+      isAdmin: canManage,
     }
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
     setActiveMenu('홈')
@@ -2499,7 +2512,7 @@ function App() {
     setAuthMode('login')
     setPendingAccountId('')
     setCurrentUserLabel(profile.accountLabel || profile.riotId)
-    setIsAdminSession(false)
+    setIsAdminSession(canManage)
   }
 
   const handleSignupSubmit = () => {
@@ -2758,12 +2771,14 @@ function App() {
     persistStateToServer(SIGNUP_STORAGE_KEY, nextProfiles)
     setUsersVersion((value) => value + 1)
 
+    const canManage = nextProfiles[currentProfileIndex]?.userType === '운영진'
     const session: AuthSession = {
       userLabel: accountLabel,
-      isAdmin: false,
+      isAdmin: canManage,
     }
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
     setCurrentUserLabel(accountLabel)
+    setIsAdminSession(canManage)
     setUserInfoFeedbackType('success')
     setUserInfoFeedback('정보가 저장되었습니다.')
     setIsUserInfoPage(false)
@@ -5184,8 +5199,7 @@ function App() {
                       ))}
                     </div>
                     <p className="admin-type-summary">
-                      총 인원 {totalManagedCount}명 (관리자 {adminCount}명 / 운영진 {staffCount}명 / 일반 {normalCount}
-                      명)
+                      
                     </p>
 
                     {shouldShowAdminCard && (
