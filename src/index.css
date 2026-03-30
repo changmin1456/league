@@ -4974,13 +4974,13 @@ select:focus {
 
 .notice-card-title {
   flex: 1;
-  height: 38px;
+  height: 52px;
   border-radius: 10px;
   border: 1px solid var(--line-2);
   background: rgba(255, 255, 255, 0.03);
   color: #dfe9ff;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 900;
   text-align: left;
   padding: 0 12px;
   cursor: pointer;
@@ -4992,6 +4992,7 @@ select:focus {
 }
 
 .notice-delete-button {
+  display: none !important;
   width: 56px;
   height: 38px;
   border-radius: 10px;
