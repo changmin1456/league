@@ -1879,15 +1879,6 @@ function App() {
     }
   }
 
-  const formatInhouseWinRate = (profile: RiotProfileResponse) => {
-    const wins = profile.custom?.wins
-    const losses = profile.custom?.losses
-    if (wins === null || wins === undefined || losses === null || losses === undefined) return '내전승률 %'
-    const total = wins + losses
-    if (total === 0) return '내전승률 0%'
-    return `내전승률 ${Math.round((wins / total) * 100)}%`
-  }
-
   const formatInhouseScore = (profile: RiotProfileResponse) => {
     const score = calculateSeedSpByInputs(profile.summoner.riotId, profile.rankedSolo)
     return `${score.toFixed(1)} SP`
@@ -4452,9 +4443,6 @@ function App() {
                                       {getSignupSeasonPeakTierFromRiotId(recordData.summoner.riotId)}
                                     </span>
                                     <span className="record-extra-pill">{formatInhouseScore(recordData)}</span>
-                                    <span className={`record-extra-pill ${getWinRateTierClass(winRate)}`}>
-                                      {formatInhouseWinRate(recordData)}
-                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -4484,6 +4472,7 @@ function App() {
                         </article>
                         <article className="record-winrate-side-card" aria-label="내전 승률">
                           <div className="record-winrate-card">
+                            <strong className="record-winrate-title">내전 승율</strong>
                             <div className="record-winrate-main">
                               <div className="record-winrate-chart" style={chartStyle}>
                                 <span className={getWinRateTierClass(winRate)}>{winRate}%</span>

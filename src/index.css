@@ -1305,6 +1305,13 @@ body {
   text-align: center;
 }
 
+.record-winrate-title {
+  color: #dce7ff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
 .record-winrate-main {
   display: flex;
   align-items: center;
