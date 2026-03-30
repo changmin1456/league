@@ -56,11 +56,10 @@ body {
 }
 
 .notice-open-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 22, 38, 0.18);
-  background: rgba(245, 247, 252, 0.96);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -69,13 +68,13 @@ body {
 }
 
 .notice-open-button:hover {
-  background: #ffffff;
+  opacity: 0.86;
 }
 
 .notice-open-button svg {
-  width: 20px;
-  height: 20px;
-  fill: #151d2b;
+  width: 24px;
+  height: 24px;
+  fill: #1c2638;
 }
 
 .brand-button {
