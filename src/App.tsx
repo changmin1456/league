@@ -982,6 +982,8 @@ function App() {
   const [matchDetailIdByKey, setMatchDetailIdByKey] = useState<Record<string, string>>(() => readMatchDetailIdMap())
   const [noticeItems, setNoticeItems] = useState<NoticeItem[]>(() => readNoticeItems())
   const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false)
+  const [isNoticeDetailModalOpen, setIsNoticeDetailModalOpen] = useState(false)
+  const [isNoticeCreateModalOpen, setIsNoticeCreateModalOpen] = useState(false)
   const [selectedNoticeId, setSelectedNoticeId] = useState('')
   const [noticeTitleInput, setNoticeTitleInput] = useState('')
   const [noticeContentInput, setNoticeContentInput] = useState('')
@@ -3112,7 +3114,21 @@ function App() {
 
   const openNoticeModal = () => {
     setIsNoticeModalOpen(true)
-    setSelectedNoticeId((prev) => prev || sortedNoticeItems[0]?.id || '')
+    setIsNoticeDetailModalOpen(false)
+    setIsNoticeCreateModalOpen(false)
+    setNoticeFeedback('')
+  }
+
+  const openNoticeDetailModal = (noticeId: string) => {
+    setSelectedNoticeId(noticeId)
+    setIsNoticeModalOpen(false)
+    setIsNoticeDetailModalOpen(true)
+  }
+
+  const openNoticeCreateModal = () => {
+    if (!isAdminSession) return
+    setIsNoticeModalOpen(false)
+    setIsNoticeCreateModalOpen(true)
     setNoticeFeedback('')
   }
 
@@ -3136,6 +3152,8 @@ function App() {
     setNoticeTitleInput('')
     setNoticeContentInput('')
     setNoticeFeedback('공지사항이 등록되었습니다.')
+    setIsNoticeCreateModalOpen(false)
+    setIsNoticeModalOpen(true)
   }
 
   const handleDeleteNotice = (noticeId: string) => {
@@ -3188,7 +3206,10 @@ function App() {
         <div className="topbar-right">
           {!isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
             <button type="button" className="notice-open-button" onClick={openNoticeModal} aria-label="공지사항 열기">
-              <span aria-hidden="true">📢</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 10.5v3c0 .28.22.5.5.5H6l2.2 4.2c.09.18.27.3.47.3H11c.36 0 .6-.37.46-.7L10 14h2.1l5.7 3.8c.33.22.8-.02.8-.42V6.62c0-.4-.47-.64-.8-.42L12.1 10H3.5c-.28 0-.5.22-.5.5z" />
+                <path d="M20.5 9.25a.75.75 0 0 1 .75.75v4a.75.75 0 0 1-1.5 0v-4a.75.75 0 0 1 .75-.75zm-2.25.95a.75.75 0 0 1 1.04.2c.26.38.4.83.4 1.3s-.14.92-.4 1.3a.75.75 0 0 1-1.24-.84c.09-.14.14-.3.14-.46s-.05-.32-.14-.46a.75.75 0 0 1 .2-1.04z" />
+              </svg>
             </button>
           )}
           <button
@@ -5424,7 +5445,7 @@ function App() {
         {isNoticeModalOpen && !isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
           <section
             className="edit-modal-backdrop notice-modal-backdrop"
-            aria-label="공지사항"
+            aria-label="공지사항 목록"
             onClick={() => setIsNoticeModalOpen(false)}
           >
             <article className="login-card notice-modal-card" onClick={(event) => event.stopPropagation()}>
@@ -5443,8 +5464,8 @@ function App() {
                     <article key={notice.id} className="notice-card">
                       <button
                         type="button"
-                        className={`notice-card-title ${selectedNotice?.id === notice.id ? 'is-active' : ''}`}
-                        onClick={() => setSelectedNoticeId(notice.id)}
+                        className="notice-card-title"
+                        onClick={() => openNoticeDetailModal(notice.id)}
                       >
                         {notice.title}
                       </button>
@@ -5462,6 +5483,31 @@ function App() {
                 )}
               </div>
 
+              {isAdminSession && (
+                <div className="notice-modal-footer">
+                  {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
+                  <button type="button" className="login-submit-button" onClick={openNoticeCreateModal}>
+                    공지사항 추가
+                  </button>
+                </div>
+              )}
+            </article>
+          </section>
+        )}
+
+        {isNoticeDetailModalOpen && !isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
+          <section
+            className="edit-modal-backdrop notice-modal-backdrop"
+            aria-label="공지사항 상세"
+            onClick={() => setIsNoticeDetailModalOpen(false)}
+          >
+            <article className="login-card notice-modal-card notice-detail-modal-card" onClick={(event) => event.stopPropagation()}>
+              <header className="notice-modal-head">
+                <h3>공지사항 상세</h3>
+                <button type="button" className="notice-modal-close" onClick={() => setIsNoticeDetailModalOpen(false)}>
+                  ×
+                </button>
+              </header>
               <section className="notice-detail">
                 {selectedNotice ? (
                   <>
@@ -5472,30 +5518,68 @@ function App() {
                     <p className="notice-detail-content">{selectedNotice.content}</p>
                   </>
                 ) : (
-                  <p className="panel-empty">공지사항 제목을 선택하면 상세 내용이 표시됩니다.</p>
+                  <p className="panel-empty">공지사항을 찾을 수 없습니다.</p>
                 )}
               </section>
+              <div className="notice-modal-footer">
+                <button
+                  type="button"
+                  className="signup-button"
+                  onClick={() => {
+                    setIsNoticeDetailModalOpen(false)
+                    setIsNoticeModalOpen(true)
+                  }}
+                >
+                  목록으로
+                </button>
+              </div>
+            </article>
+          </section>
+        )}
 
-              {isAdminSession && (
-                <section className="notice-admin-form">
-                  <input
-                    value={noticeTitleInput}
-                    onChange={(event) => setNoticeTitleInput(event.target.value)}
-                    className="login-input"
-                    placeholder="공지사항 제목"
-                  />
-                  <textarea
-                    value={noticeContentInput}
-                    onChange={(event) => setNoticeContentInput(event.target.value)}
-                    className="notice-textarea"
-                    placeholder="공지사항 내용"
-                  />
-                  {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
-                  <button type="button" className="login-submit-button" onClick={handleCreateNotice}>
-                    공지하기
-                  </button>
-                </section>
-              )}
+        {isNoticeCreateModalOpen && !isLoginPage && !isUserInfoPage && currentUserLabel.trim() && isAdminSession && (
+          <section
+            className="edit-modal-backdrop notice-modal-backdrop"
+            aria-label="공지사항 등록"
+            onClick={() => setIsNoticeCreateModalOpen(false)}
+          >
+            <article className="login-card notice-modal-card notice-create-modal-card" onClick={(event) => event.stopPropagation()}>
+              <header className="notice-modal-head">
+                <h3>공지사항 추가</h3>
+                <button type="button" className="notice-modal-close" onClick={() => setIsNoticeCreateModalOpen(false)}>
+                  ×
+                </button>
+              </header>
+              <section className="notice-admin-form">
+                <input
+                  value={noticeTitleInput}
+                  onChange={(event) => setNoticeTitleInput(event.target.value)}
+                  className="login-input"
+                  placeholder="공지사항 제목"
+                />
+                <textarea
+                  value={noticeContentInput}
+                  onChange={(event) => setNoticeContentInput(event.target.value)}
+                  className="notice-textarea"
+                  placeholder="공지사항 내용"
+                />
+                {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
+              </section>
+              <div className="notice-modal-footer">
+                <button type="button" className="login-submit-button" onClick={handleCreateNotice}>
+                  공지하기
+                </button>
+                <button
+                  type="button"
+                  className="signup-button"
+                  onClick={() => {
+                    setIsNoticeCreateModalOpen(false)
+                    setIsNoticeModalOpen(true)
+                  }}
+                >
+                  취소
+                </button>
+              </div>
             </article>
           </section>
         )}

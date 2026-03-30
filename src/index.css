@@ -59,18 +59,23 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  font-size: 18px;
+  border: 1px solid rgba(15, 22, 38, 0.18);
+  background: rgba(245, 247, 252, 0.96);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  padding: 0;
 }
 
 .notice-open-button:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: #ffffff;
+}
+
+.notice-open-button svg {
+  width: 20px;
+  height: 20px;
+  fill: #151d2b;
 }
 
 .brand-button {
@@ -4921,6 +4926,14 @@ select:focus {
   gap: 12px;
 }
 
+.notice-detail-modal-card {
+  width: min(100%, 560px);
+}
+
+.notice-create-modal-card {
+  width: min(100%, 560px);
+}
+
 .notice-modal-head {
   display: flex;
   align-items: center;
@@ -5023,6 +5036,12 @@ select:focus {
 }
 
 .notice-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notice-modal-footer {
   display: flex;
   flex-direction: column;
   gap: 8px;
