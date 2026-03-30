@@ -4962,33 +4962,50 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 186px;
+  max-height: 320px;
   overflow: auto;
 }
 
 .notice-card {
   display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.notice-card-title {
-  flex: 1;
-  height: 52px;
+  flex-direction: column;
+  gap: 0;
   border-radius: 10px;
   border: 1px solid var(--line-2);
   background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.notice-card-title {
+  width: 100%;
+  height: 50px;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
   color: #dfe9ff;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 900;
   text-align: left;
   padding: 0 12px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.notice-card-title.is-active {
-  border-color: rgba(95, 139, 240, 0.85);
-  background: rgba(75, 121, 223, 0.28);
+.notice-card.is-open .notice-card-title {
+  background: rgba(75, 121, 223, 0.2);
+}
+
+.notice-card-arrow {
+  font-size: 14px;
+  color: #d7e4ff;
+  transition: transform 0.18s ease;
+}
+
+.notice-card-arrow.is-open {
+  transform: rotate(180deg);
 }
 
 .notice-delete-button {
@@ -5002,6 +5019,15 @@ select:focus {
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.notice-card-content {
+  border-top: 1px solid var(--line-2);
+  background: rgba(0, 0, 0, 0.1);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .notice-detail {

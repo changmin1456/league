@@ -982,7 +982,6 @@ function App() {
   const [matchDetailIdByKey, setMatchDetailIdByKey] = useState<Record<string, string>>(() => readMatchDetailIdMap())
   const [noticeItems, setNoticeItems] = useState<NoticeItem[]>(() => readNoticeItems())
   const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false)
-  const [isNoticeDetailModalOpen, setIsNoticeDetailModalOpen] = useState(false)
   const [isNoticeCreateModalOpen, setIsNoticeCreateModalOpen] = useState(false)
   const [selectedNoticeId, setSelectedNoticeId] = useState('')
   const [noticeTitleInput, setNoticeTitleInput] = useState('')
@@ -3095,10 +3094,6 @@ function App() {
   ])
 
   const sortedNoticeItems = [...noticeItems].sort((a, b) => b.createdAt - a.createdAt)
-  const selectedNotice =
-    sortedNoticeItems.find((item) => item.id === selectedNoticeId) ??
-    sortedNoticeItems[0] ??
-    null
 
   const formatNoticeDate = (timestamp: number) => {
     if (!Number.isFinite(timestamp)) return '-'
@@ -3113,14 +3108,11 @@ function App() {
 
   const openNoticeModal = () => {
     setIsNoticeModalOpen(true)
-    setIsNoticeDetailModalOpen(false)
     setIsNoticeCreateModalOpen(false)
   }
 
-  const openNoticeDetailModal = (noticeId: string) => {
-    setSelectedNoticeId(noticeId)
-    setIsNoticeModalOpen(false)
-    setIsNoticeDetailModalOpen(true)
+  const toggleNoticeCard = (noticeId: string) => {
+    setSelectedNoticeId((prev) => (prev === noticeId ? '' : noticeId))
   }
 
   const openNoticeCreateModal = () => {
@@ -5449,17 +5441,31 @@ function App() {
                 {sortedNoticeItems.length === 0 ? (
                   <p className="panel-empty">등록된 공지사항이 없습니다.</p>
                 ) : (
-                  sortedNoticeItems.map((notice) => (
-                    <article key={notice.id} className="notice-card">
-                      <button
-                        type="button"
-                        className="notice-card-title"
-                        onClick={() => openNoticeDetailModal(notice.id)}
-                      >
-                        {notice.title}
-                      </button>
-                    </article>
-                  ))
+                  sortedNoticeItems.map((notice) => {
+                    const isOpen = selectedNoticeId === notice.id
+                    return (
+                      <article key={notice.id} className={`notice-card ${isOpen ? 'is-open' : ''}`}>
+                        <button
+                          type="button"
+                          className="notice-card-title"
+                          onClick={() => toggleNoticeCard(notice.id)}
+                        >
+                          <span>{notice.title}</span>
+                          <span className={`notice-card-arrow ${isOpen ? 'is-open' : ''}`} aria-hidden="true">
+                            ▼
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <section className="notice-card-content">
+                            <p className="notice-detail-meta">
+                              {formatNoticeDate(notice.createdAt)} · {notice.authorLabel}
+                            </p>
+                            <p className="notice-detail-content">{notice.content}</p>
+                          </section>
+                        )}
+                      </article>
+                    )
+                  })
                 )}
               </div>
 
@@ -5470,48 +5476,6 @@ function App() {
                   </button>
                 </div>
               )}
-            </article>
-          </section>
-        )}
-
-        {isNoticeDetailModalOpen && !isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
-          <section
-            className="edit-modal-backdrop notice-modal-backdrop"
-            aria-label="공지사항 상세"
-            onClick={() => setIsNoticeDetailModalOpen(false)}
-          >
-            <article className="login-card notice-modal-card notice-detail-modal-card" onClick={(event) => event.stopPropagation()}>
-              <header className="notice-modal-head">
-                <h3>공지사항 상세</h3>
-                <button type="button" className="notice-modal-close" onClick={() => setIsNoticeDetailModalOpen(false)}>
-                  ×
-                </button>
-              </header>
-              <section className="notice-detail">
-                {selectedNotice ? (
-                  <>
-                    <h4>{selectedNotice.title}</h4>
-                    <p className="notice-detail-meta">
-                      {formatNoticeDate(selectedNotice.createdAt)} · {selectedNotice.authorLabel}
-                    </p>
-                    <p className="notice-detail-content">{selectedNotice.content}</p>
-                  </>
-                ) : (
-                  <p className="panel-empty">공지사항을 찾을 수 없습니다.</p>
-                )}
-              </section>
-              <div className="notice-modal-footer">
-                <button
-                  type="button"
-                  className="signup-button"
-                  onClick={() => {
-                    setIsNoticeDetailModalOpen(false)
-                    setIsNoticeModalOpen(true)
-                  }}
-                >
-                  목록으로
-                </button>
-              </div>
             </article>
           </section>
         )}
