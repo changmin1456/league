@@ -3145,6 +3145,14 @@ function App() {
     setIsNoticeModalOpen(true)
   }
 
+  const handleDeleteNotice = (noticeId: string) => {
+    if (!isAdminSession) return
+    if (!window.confirm('이 공지사항을 삭제할까요?')) return
+    setNoticeItems((prev) => prev.filter((item) => item.id !== noticeId))
+    setSelectedNoticeId((prev) => (prev === noticeId ? '' : prev))
+    window.alert('공지사항이 삭제되었습니다.')
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -5451,8 +5459,31 @@ function App() {
                           onClick={() => toggleNoticeCard(notice.id)}
                         >
                           <span>{notice.title}</span>
-                          <span className={`notice-card-arrow ${isOpen ? 'is-open' : ''}`} aria-hidden="true">
-                            ▼
+                          <span className="notice-card-right">
+                            {isAdminSession && (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="notice-card-delete"
+                                onClick={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  handleDeleteNotice(notice.id)
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    handleDeleteNotice(notice.id)
+                                  }
+                                }}
+                              >
+                                삭제
+                              </span>
+                            )}
+                            <span className={`notice-card-arrow ${isOpen ? 'is-open' : ''}`} aria-hidden="true">
+                              ▼
+                            </span>
                           </span>
                         </button>
                         {isOpen && (

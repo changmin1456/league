@@ -4998,6 +4998,27 @@ select:focus {
   background: rgba(75, 121, 223, 0.2);
 }
 
+.notice-card-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notice-card-delete {
+  min-width: 40px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(188, 74, 85, 0.9);
+  background: rgba(132, 43, 52, 0.78);
+  color: #ffd7db;
+  font-size: 12px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
 .notice-card-arrow {
   font-size: 14px;
   color: #d7e4ff;
@@ -5006,19 +5027,6 @@ select:focus {
 
 .notice-card-arrow.is-open {
   transform: rotate(180deg);
-}
-
-.notice-delete-button {
-  display: none !important;
-  width: 56px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid rgba(188, 74, 85, 0.9);
-  background: rgba(132, 43, 52, 0.78);
-  color: #ffd7db;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
 }
 
 .notice-card-content {
