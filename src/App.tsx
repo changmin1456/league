@@ -4687,8 +4687,8 @@ function App() {
                             <strong className="record-winrate-title">내전 승율</strong>
                             <div className="record-winrate-main">
                               <div className="record-winrate-chart" style={chartStyle}>
-                                <span className={getWinRateTierClass(winRate)}>{winRate}%</span>
                               </div>
+                              <strong className={`record-winrate-percent ${getWinRateTierClass(winRate)}`}>{winRate}%</strong>
                             </div>
                             <div className="record-winrate-meta">
                               <strong>

@@ -1364,6 +1364,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   width: 100%;
 }
 
@@ -1396,11 +1397,11 @@ body {
   background: rgba(21, 24, 34, 0.95);
 }
 
-.record-winrate-chart span {
-  position: absolute;
+.record-winrate-percent {
   color: #76a6ff;
   font-size: 30px;
   font-weight: 900;
+  line-height: 1;
 }
 
 .record-winrate-meta {
@@ -2585,7 +2586,7 @@ body {
 .winrate-tier-1,
 .record-champion-table td.winrate-tier-1,
 .record-stats-table td.winrate-tier-1,
-.record-winrate-chart span.winrate-tier-1,
+.record-winrate-percent.winrate-tier-1,
 .record-extra-pill.winrate-tier-1,
 .record-rank-stat strong.winrate-tier-1,
 .seed-card-inhouse strong.winrate-tier-1 {
@@ -2595,7 +2596,7 @@ body {
 .winrate-tier-2,
 .record-champion-table td.winrate-tier-2,
 .record-stats-table td.winrate-tier-2,
-.record-winrate-chart span.winrate-tier-2,
+.record-winrate-percent.winrate-tier-2,
 .record-extra-pill.winrate-tier-2,
 .record-rank-stat strong.winrate-tier-2,
 .seed-card-inhouse strong.winrate-tier-2 {
@@ -2605,7 +2606,7 @@ body {
 .winrate-tier-3,
 .record-champion-table td.winrate-tier-3,
 .record-stats-table td.winrate-tier-3,
-.record-winrate-chart span.winrate-tier-3,
+.record-winrate-percent.winrate-tier-3,
 .record-extra-pill.winrate-tier-3,
 .record-rank-stat strong.winrate-tier-3,
 .seed-card-inhouse strong.winrate-tier-3 {
@@ -2615,7 +2616,7 @@ body {
 .winrate-tier-4,
 .record-champion-table td.winrate-tier-4,
 .record-stats-table td.winrate-tier-4,
-.record-winrate-chart span.winrate-tier-4,
+.record-winrate-percent.winrate-tier-4,
 .record-extra-pill.winrate-tier-4,
 .record-rank-stat strong.winrate-tier-4,
 .seed-card-inhouse strong.winrate-tier-4 {
