@@ -3156,14 +3156,6 @@ function App() {
     setIsNoticeModalOpen(true)
   }
 
-  const handleDeleteNotice = (noticeId: string) => {
-    if (!isAdminSession) return
-    if (!window.confirm('이 공지사항을 삭제할까요?')) return
-    setNoticeItems((prev) => prev.filter((item) => item.id !== noticeId))
-    setSelectedNoticeId((prev) => (prev === noticeId ? '' : prev))
-    setNoticeFeedback('공지사항이 삭제되었습니다.')
-  }
-
   return (
     <div className="app">
       <header className="topbar">
@@ -5469,15 +5461,6 @@ function App() {
                       >
                         {notice.title}
                       </button>
-                      {isAdminSession && (
-                        <button
-                          type="button"
-                          className="notice-delete-button"
-                          onClick={() => handleDeleteNotice(notice.id)}
-                        >
-                          삭제
-                        </button>
-                      )}
                     </article>
                   ))
                 )}
