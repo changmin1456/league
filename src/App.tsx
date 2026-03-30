@@ -80,6 +80,14 @@ type HomeKdaTopRow = {
   profileIconId: number | null
 }
 
+type NoticeItem = {
+  id: string
+  title: string
+  content: string
+  createdAt: number
+  authorLabel: string
+}
+
 type RiotMatchDetailParticipant = {
   puuid: string
   summonerName: string
@@ -127,12 +135,14 @@ type SignupProfile = {
 const SIGNUP_STORAGE_KEY = 'league-signup-users'
 const ADMIN_PROFILE_STORAGE_KEY = 'league-admin-profile'
 const AUTH_SESSION_STORAGE_KEY = 'league-auth-session'
+const LAST_ACTIVE_MENU_STORAGE_KEY = 'league-last-active-menu'
 const INHOUSE_CARDS_STORAGE_KEY = 'league-inhouse-cards'
 const INHOUSE_APPLICATIONS_STORAGE_KEY = 'league-inhouse-applications'
 const INHOUSE_MATCH_RECORDS_STORAGE_KEY = 'league-inhouse-match-records'
 const TEAM_BRACKETS_STORAGE_KEY = 'league-team-brackets'
 const INHOUSE_BRACKET_RECORDS_STORAGE_KEY = 'league-inhouse-bracket-records'
 const MATCH_DETAIL_ID_MAP_STORAGE_KEY = 'league-match-detail-id-map'
+const NOTICE_ITEMS_STORAGE_KEY = 'league-notice-items'
 const PERSIST_STATE_KEYS = [
   SIGNUP_STORAGE_KEY,
   ADMIN_PROFILE_STORAGE_KEY,
@@ -142,6 +152,7 @@ const PERSIST_STATE_KEYS = [
   TEAM_BRACKETS_STORAGE_KEY,
   INHOUSE_BRACKET_RECORDS_STORAGE_KEY,
   MATCH_DETAIL_ID_MAP_STORAGE_KEY,
+  NOTICE_ITEMS_STORAGE_KEY,
 ] as const
 const DDRAGON_VERSION = '14.24.1'
 const ADMIN_ACCOUNT = {
@@ -810,14 +821,65 @@ const readMatchDetailIdMap = (): Record<string, string> => {
   }
 }
 
+const readNoticeItems = (): NoticeItem[] => {
+  try {
+    const raw = localStorage.getItem(NOTICE_ITEMS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== 'object') return []
+      const record = item as Record<string, unknown>
+      if (typeof record.id !== 'string' || typeof record.title !== 'string' || typeof record.content !== 'string') {
+        return []
+      }
+      const createdAt = typeof record.createdAt === 'number' && Number.isFinite(record.createdAt) ? record.createdAt : Date.now()
+      const authorLabel =
+        typeof record.authorLabel === 'string' && record.authorLabel.trim() !== '' ? record.authorLabel : '관리자'
+      return [
+        {
+          id: record.id,
+          title: record.title,
+          content: record.content,
+          createdAt,
+          authorLabel,
+        } satisfies NoticeItem,
+      ]
+    })
+  } catch {
+    return []
+  }
+}
+
 function App() {
   type RecordCategoryFilter = InhouseCategoryValue | 'detail-record' | 'stats'
   const MEMBER_MENU = '멤버'
   const TEAM_DRAW_MENU = '시드'
   const TEAM_SELECT_MENU = '팀 선정'
   const TEAM_BRACKET_MENU = '대진표'
+  const readMenuFromHash = () => {
+    const rawHash = window.location.hash.replace(/^#/, '')
+    if (!rawHash) return '홈'
+    try {
+      const decoded = decodeURIComponent(rawHash).trim()
+      return decoded || '홈'
+    } catch {
+      return '홈'
+    }
+  }
+  const readLastActiveMenu = () => {
+    try {
+      return localStorage.getItem(LAST_ACTIVE_MENU_STORAGE_KEY)?.trim() || '홈'
+    } catch {
+      return '홈'
+    }
+  }
 
-  const [activeMenu, setActiveMenu] = useState('홈')
+  const [activeMenu, setActiveMenu] = useState(() => {
+    const menuFromHash = readMenuFromHash()
+    if (menuFromHash !== '홈') return menuFromHash
+    return readLastActiveMenu()
+  })
   const [isLoginPage, setIsLoginPage] = useState(true)
   const [isUserInfoPage, setIsUserInfoPage] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'pending'>('login')
@@ -918,6 +980,12 @@ function App() {
   const [matchDetailError, setMatchDetailError] = useState('')
   const [matchDetailData, setMatchDetailData] = useState<RiotMatchDetailResponse | null>(null)
   const [matchDetailIdByKey, setMatchDetailIdByKey] = useState<Record<string, string>>(() => readMatchDetailIdMap())
+  const [noticeItems, setNoticeItems] = useState<NoticeItem[]>(() => readNoticeItems())
+  const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false)
+  const [selectedNoticeId, setSelectedNoticeId] = useState('')
+  const [noticeTitleInput, setNoticeTitleInput] = useState('')
+  const [noticeContentInput, setNoticeContentInput] = useState('')
+  const [noticeFeedback, setNoticeFeedback] = useState('')
   const [summonerSpellIconById, setSummonerSpellIconById] = useState<Record<number, string>>({})
   const [perkIconById, setPerkIconById] = useState<Record<number, string>>({})
   const hasLoadedInhouseCards = useRef(false)
@@ -925,6 +993,7 @@ function App() {
   const hasLoadedInhouseMatchRecords = useRef(false)
   const hasLoadedInhouseBracketRecords = useRef(false)
   const hasLoadedTeamBrackets = useRef(false)
+  const hasLoadedNoticeItems = useRef(false)
   const hasInjectedDummyApplicantsByCardId = useRef<Record<string, true>>({})
   const isMenuHistoryPop = useRef(false)
 
@@ -1179,6 +1248,11 @@ function App() {
   }, [])
 
   useEffect(() => {
+    try {
+      localStorage.setItem(LAST_ACTIVE_MENU_STORAGE_KEY, activeMenu)
+    } catch {
+      // ignore storage errors
+    }
     if (isMenuHistoryPop.current) {
       isMenuHistoryPop.current = false
       return
@@ -1222,6 +1296,7 @@ function App() {
         setInhouseBracketRecords(readInhouseBracketRecords())
         setTeamBracketByCardId(readTeamBrackets())
         setMatchDetailIdByKey(readMatchDetailIdMap())
+        setNoticeItems(readNoticeItems())
         setUsersVersion((prev) => prev + 1)
       } catch {
         // ignore hydration failures and keep local data
@@ -2207,6 +2282,15 @@ function App() {
     persistStateToServer(MATCH_DETAIL_ID_MAP_STORAGE_KEY, matchDetailIdByKey)
   }, [matchDetailIdByKey])
 
+  useEffect(() => {
+    if (!hasLoadedNoticeItems.current) {
+      hasLoadedNoticeItems.current = true
+      return
+    }
+    localStorage.setItem(NOTICE_ITEMS_STORAGE_KEY, JSON.stringify(noticeItems))
+    persistStateToServer(NOTICE_ITEMS_STORAGE_KEY, noticeItems)
+  }, [noticeItems])
+
   const formatSecondsToMinuteText = (totalSeconds: number) => {
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return '-'
     const minutes = Math.floor(totalSeconds / 60)
@@ -3009,10 +3093,68 @@ function App() {
     TEAM_BRACKET_MENU,
   ])
 
+  const sortedNoticeItems = [...noticeItems].sort((a, b) => b.createdAt - a.createdAt)
+  const selectedNotice =
+    sortedNoticeItems.find((item) => item.id === selectedNoticeId) ??
+    sortedNoticeItems[0] ??
+    null
+
+  const formatNoticeDate = (timestamp: number) => {
+    if (!Number.isFinite(timestamp)) return '-'
+    return new Date(timestamp).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const openNoticeModal = () => {
+    setIsNoticeModalOpen(true)
+    setSelectedNoticeId((prev) => prev || sortedNoticeItems[0]?.id || '')
+    setNoticeFeedback('')
+  }
+
+  const handleCreateNotice = () => {
+    if (!isAdminSession) return
+    const title = noticeTitleInput.trim()
+    const content = noticeContentInput.trim()
+    if (!title || !content) {
+      setNoticeFeedback('제목과 내용을 입력해주세요.')
+      return
+    }
+    const newNotice: NoticeItem = {
+      id: `notice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      content,
+      createdAt: Date.now(),
+      authorLabel: currentUserLabel.trim() || '관리자',
+    }
+    setNoticeItems((prev) => [newNotice, ...prev])
+    setSelectedNoticeId(newNotice.id)
+    setNoticeTitleInput('')
+    setNoticeContentInput('')
+    setNoticeFeedback('공지사항이 등록되었습니다.')
+  }
+
+  const handleDeleteNotice = (noticeId: string) => {
+    if (!isAdminSession) return
+    if (!window.confirm('이 공지사항을 삭제할까요?')) return
+    setNoticeItems((prev) => prev.filter((item) => item.id !== noticeId))
+    setSelectedNoticeId((prev) => (prev === noticeId ? '' : prev))
+    setNoticeFeedback('공지사항이 삭제되었습니다.')
+  }
+
   return (
     <div className="app">
       <header className="topbar">
         <div className="topbar-left">
+          {!isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
+            <button type="button" className="notice-open-button" onClick={openNoticeModal} aria-label="공지사항 열기">
+              <span aria-hidden="true">📢</span>
+            </button>
+          )}
           <button
             className="brand-button"
             type="button"
@@ -4479,10 +4621,9 @@ function App() {
                               </div>
                             </div>
                             <div className="record-winrate-meta">
-                              <strong>{totalGames} 게임</strong>
-                              <span>
-                                {wins}승 {losses}패
-                              </span>
+                              <strong>
+                                {totalGames} 게임 ({wins}승 {losses}패)
+                              </strong>
                             </div>
                             <div className="record-winrate-kda">
                               <strong className={getKdaTierClass(totalKdaValue)}>{totalKdaText}</strong>
@@ -5277,6 +5418,85 @@ function App() {
                 )}
               </article>
             </section>
+          </section>
+        )}
+
+        {isNoticeModalOpen && !isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
+          <section
+            className="edit-modal-backdrop notice-modal-backdrop"
+            aria-label="공지사항"
+            onClick={() => setIsNoticeModalOpen(false)}
+          >
+            <article className="login-card notice-modal-card" onClick={(event) => event.stopPropagation()}>
+              <header className="notice-modal-head">
+                <h3>공지사항</h3>
+                <button type="button" className="notice-modal-close" onClick={() => setIsNoticeModalOpen(false)}>
+                  ×
+                </button>
+              </header>
+
+              <div className="notice-list">
+                {sortedNoticeItems.length === 0 ? (
+                  <p className="panel-empty">등록된 공지사항이 없습니다.</p>
+                ) : (
+                  sortedNoticeItems.map((notice) => (
+                    <article key={notice.id} className="notice-card">
+                      <button
+                        type="button"
+                        className={`notice-card-title ${selectedNotice?.id === notice.id ? 'is-active' : ''}`}
+                        onClick={() => setSelectedNoticeId(notice.id)}
+                      >
+                        {notice.title}
+                      </button>
+                      {isAdminSession && (
+                        <button
+                          type="button"
+                          className="notice-delete-button"
+                          onClick={() => handleDeleteNotice(notice.id)}
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </article>
+                  ))
+                )}
+              </div>
+
+              <section className="notice-detail">
+                {selectedNotice ? (
+                  <>
+                    <h4>{selectedNotice.title}</h4>
+                    <p className="notice-detail-meta">
+                      {formatNoticeDate(selectedNotice.createdAt)} · {selectedNotice.authorLabel}
+                    </p>
+                    <p className="notice-detail-content">{selectedNotice.content}</p>
+                  </>
+                ) : (
+                  <p className="panel-empty">공지사항 제목을 선택하면 상세 내용이 표시됩니다.</p>
+                )}
+              </section>
+
+              {isAdminSession && (
+                <section className="notice-admin-form">
+                  <input
+                    value={noticeTitleInput}
+                    onChange={(event) => setNoticeTitleInput(event.target.value)}
+                    className="login-input"
+                    placeholder="공지사항 제목"
+                  />
+                  <textarea
+                    value={noticeContentInput}
+                    onChange={(event) => setNoticeContentInput(event.target.value)}
+                    className="notice-textarea"
+                    placeholder="공지사항 내용"
+                  />
+                  {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
+                  <button type="button" className="login-submit-button" onClick={handleCreateNotice}>
+                    공지하기
+                  </button>
+                </section>
+              )}
+            </article>
           </section>
         )}
 
