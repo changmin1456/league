@@ -987,7 +987,6 @@ function App() {
   const [selectedNoticeId, setSelectedNoticeId] = useState('')
   const [noticeTitleInput, setNoticeTitleInput] = useState('')
   const [noticeContentInput, setNoticeContentInput] = useState('')
-  const [noticeFeedback, setNoticeFeedback] = useState('')
   const [summonerSpellIconById, setSummonerSpellIconById] = useState<Record<number, string>>({})
   const [perkIconById, setPerkIconById] = useState<Record<number, string>>({})
   const hasLoadedInhouseCards = useRef(false)
@@ -3116,7 +3115,6 @@ function App() {
     setIsNoticeModalOpen(true)
     setIsNoticeDetailModalOpen(false)
     setIsNoticeCreateModalOpen(false)
-    setNoticeFeedback('')
   }
 
   const openNoticeDetailModal = (noticeId: string) => {
@@ -3129,7 +3127,6 @@ function App() {
     if (!isAdminSession) return
     setIsNoticeModalOpen(false)
     setIsNoticeCreateModalOpen(true)
-    setNoticeFeedback('')
   }
 
   const handleCreateNotice = () => {
@@ -3137,7 +3134,7 @@ function App() {
     const title = noticeTitleInput.trim()
     const content = noticeContentInput.trim()
     if (!title || !content) {
-      setNoticeFeedback('제목과 내용을 입력해주세요.')
+      window.alert('제목과 내용을 입력해주세요.')
       return
     }
     const newNotice: NoticeItem = {
@@ -3151,7 +3148,7 @@ function App() {
     setSelectedNoticeId(newNotice.id)
     setNoticeTitleInput('')
     setNoticeContentInput('')
-    setNoticeFeedback('공지사항이 등록되었습니다.')
+    window.alert('공지사항이 등록되었습니다.')
     setIsNoticeCreateModalOpen(false)
     setIsNoticeModalOpen(true)
   }
@@ -5468,7 +5465,6 @@ function App() {
 
               {isAdminSession && (
                 <div className="notice-modal-footer">
-                  {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
                   <button type="button" className="login-submit-button" onClick={openNoticeCreateModal}>
                     공지사항 추가
                   </button>
@@ -5546,7 +5542,6 @@ function App() {
                   className="notice-textarea"
                   placeholder="공지사항 내용"
                 />
-                {noticeFeedback && <p className="auth-feedback is-success">{noticeFeedback}</p>}
               </section>
               <div className="notice-modal-footer">
                 <button type="button" className="login-submit-button" onClick={handleCreateNotice}>
