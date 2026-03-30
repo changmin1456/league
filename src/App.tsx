@@ -136,6 +136,7 @@ const SIGNUP_STORAGE_KEY = 'league-signup-users'
 const ADMIN_PROFILE_STORAGE_KEY = 'league-admin-profile'
 const AUTH_SESSION_STORAGE_KEY = 'league-auth-session'
 const LAST_ACTIVE_MENU_STORAGE_KEY = 'league-last-active-menu'
+const NOTICE_READ_STATE_PREFIX = 'league-notice-read'
 const INHOUSE_CARDS_STORAGE_KEY = 'league-inhouse-cards'
 const INHOUSE_APPLICATIONS_STORAGE_KEY = 'league-inhouse-applications'
 const INHOUSE_MATCH_RECORDS_STORAGE_KEY = 'league-inhouse-match-records'
@@ -984,6 +985,8 @@ function App() {
   const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false)
   const [isNoticeCreateModalOpen, setIsNoticeCreateModalOpen] = useState(false)
   const [selectedNoticeId, setSelectedNoticeId] = useState('')
+  const [noticeViewerKey, setNoticeViewerKey] = useState('')
+  const [noticeLastReadAt, setNoticeLastReadAt] = useState<number | null>(null)
   const [noticeTitleInput, setNoticeTitleInput] = useState('')
   const [noticeContentInput, setNoticeContentInput] = useState('')
   const [summonerSpellIconById, setSummonerSpellIconById] = useState<Record<number, string>>({})
@@ -3094,6 +3097,8 @@ function App() {
   ])
 
   const sortedNoticeItems = [...noticeItems].sort((a, b) => b.createdAt - a.createdAt)
+  const latestNoticeAt = sortedNoticeItems[0]?.createdAt ?? 0
+  const hasUnreadNotice = Boolean(currentUserLabel.trim()) && latestNoticeAt > 0 && noticeLastReadAt !== null && latestNoticeAt > noticeLastReadAt
 
   const formatNoticeDate = (timestamp: number) => {
     if (!Number.isFinite(timestamp)) return '-'
@@ -3106,9 +3111,63 @@ function App() {
     })
   }
 
+  useEffect(() => {
+    const labelKey = currentUserLabel.trim()
+    if (!labelKey) {
+      setNoticeViewerKey('')
+      setNoticeLastReadAt(null)
+      return
+    }
+    let cancelled = false
+    const resolveViewerKey = async () => {
+      try {
+        const response = await fetch(`/api/client-identity?userLabel=${encodeURIComponent(labelKey)}`)
+        const data = (await response.json()) as { key?: string }
+        if (cancelled) return
+        const key = typeof data.key === 'string' && data.key.trim() !== '' ? data.key.trim() : labelKey.toLowerCase()
+        setNoticeViewerKey(key)
+      } catch {
+        if (cancelled) return
+        setNoticeViewerKey(labelKey.toLowerCase())
+      }
+    }
+    void resolveViewerKey()
+    return () => {
+      cancelled = true
+    }
+  }, [currentUserLabel])
+
+  useEffect(() => {
+    if (!noticeViewerKey) return
+    let cancelled = false
+    const syncReadAt = async () => {
+      const stateKey = `${NOTICE_READ_STATE_PREFIX}:${noticeViewerKey}`
+      try {
+        const response = await fetch(`/api/persist/state-batch?keys=${encodeURIComponent(stateKey)}`)
+        const data = (await response.json()) as { states?: Record<string, string | null> }
+        if (cancelled) return
+        const raw = data.states?.[stateKey]
+        const parsed = typeof raw === 'string' ? Number(raw) : 0
+        setNoticeLastReadAt(Number.isFinite(parsed) ? parsed : 0)
+      } catch {
+        if (cancelled) return
+        setNoticeLastReadAt(0)
+      }
+    }
+    void syncReadAt()
+    return () => {
+      cancelled = true
+    }
+  }, [noticeViewerKey])
+
   const openNoticeModal = () => {
     setIsNoticeModalOpen(true)
     setIsNoticeCreateModalOpen(false)
+    if (noticeViewerKey && latestNoticeAt > 0) {
+      const stateKey = `${NOTICE_READ_STATE_PREFIX}:${noticeViewerKey}`
+      setNoticeLastReadAt(latestNoticeAt)
+      void persistStatesToServer({ [stateKey]: String(latestNoticeAt) })
+    }
   }
 
   const toggleNoticeCard = (noticeId: string) => {
@@ -3199,6 +3258,7 @@ function App() {
                 <path d="M3 10.5v3c0 .28.22.5.5.5H6l2.2 4.2c.09.18.27.3.47.3H11c.36 0 .6-.37.46-.7L10 14h2.1l5.7 3.8c.33.22.8-.02.8-.42V6.62c0-.4-.47-.64-.8-.42L12.1 10H3.5c-.28 0-.5.22-.5.5z" />
                 <path d="M20.5 9.25a.75.75 0 0 1 .75.75v4a.75.75 0 0 1-1.5 0v-4a.75.75 0 0 1 .75-.75zm-2.25.95a.75.75 0 0 1 1.04.2c.26.38.4.83.4 1.3s-.14.92-.4 1.3a.75.75 0 0 1-1.24-.84c.09-.14.14-.3.14-.46s-.05-.32-.14-.46a.75.75 0 0 1 .2-1.04z" />
               </svg>
+              {hasUnreadNotice && <span className="notice-unread-bubble">새 공지</span>}
             </button>
           )}
           <button
