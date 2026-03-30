@@ -3150,11 +3150,6 @@ function App() {
     <div className="app">
       <header className="topbar">
         <div className="topbar-left">
-          {!isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
-            <button type="button" className="notice-open-button" onClick={openNoticeModal} aria-label="공지사항 열기">
-              <span aria-hidden="true">📢</span>
-            </button>
-          )}
           <button
             className="brand-button"
             type="button"
@@ -3191,6 +3186,11 @@ function App() {
         </div>
 
         <div className="topbar-right">
+          {!isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
+            <button type="button" className="notice-open-button" onClick={openNoticeModal} aria-label="공지사항 열기">
+              <span aria-hidden="true">📢</span>
+            </button>
+          )}
           <button
             className="auth-button"
             type="button"
