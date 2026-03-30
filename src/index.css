@@ -1458,6 +1458,26 @@ body {
   background: #256fda;
 }
 
+.record-admin-assign-button {
+  border-color: rgba(255, 255, 255, 0.52);
+  background: #ffffff;
+  color: #20293c;
+}
+
+.record-admin-assign-button:hover {
+  background: #eff3fa;
+}
+
+.record-assign-modal-card {
+  width: min(100%, 520px);
+}
+
+.record-assign-modal-card .inhouse-apply-status-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .record-champion-card {
   border-radius: 18px;
   border: 1px solid var(--line-2);

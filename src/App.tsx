@@ -948,6 +948,8 @@ function App() {
   const [inhouseCreateFeedback, setInhouseCreateFeedback] = useState('')
   const [isInhouseApplyModalOpen, setIsInhouseApplyModalOpen] = useState(false)
   const [inhouseApplyTargetCardId, setInhouseApplyTargetCardId] = useState('')
+  const [isRecordAssignModalOpen, setIsRecordAssignModalOpen] = useState(false)
+  const [recordAssignCardId, setRecordAssignCardId] = useState('')
   const [isInhouseEditModalOpen, setIsInhouseEditModalOpen] = useState(false)
   const [inhouseEditTargetId, setInhouseEditTargetId] = useState('')
   const [inhouseEditTitle, setInhouseEditTitle] = useState('')
@@ -1033,6 +1035,9 @@ function App() {
       return toDistance(a.timestamp) - toDistance(b.timestamp)
     })
     .slice(0, 3)
+  const recordAssignableInhouseCards = inhouseCards
+    .filter((card) => card.category === 'inhouse-apply')
+    .sort((a, b) => parseInhouseStartAtTimestamp(a.startAt) - parseInhouseStartAtTimestamp(b.startAt))
   const currentTeamDrawCard = inhouseCards.find((card) => card.id === teamDrawCardId) ?? null
   const currentSeedMemberLimit = currentTeamDrawCard
     ? getMaxSeedMemberCountByStartAt(currentTeamDrawCard.startAt)
@@ -2255,6 +2260,87 @@ function App() {
     const url = buildFowProfileUrl(recordData.summoner.riotId)
     if (!url) return
     window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const closeRecordAssignModal = () => {
+    setIsRecordAssignModalOpen(false)
+    setRecordAssignCardId('')
+  }
+
+  const openRecordAssignModal = () => {
+    if (!isAdminSession) return
+    if (!recordData) return
+    if (recordAssignableInhouseCards.length === 0) {
+      window.alert('등록된 내전 목록이 없습니다.')
+      return
+    }
+    setRecordAssignCardId(recordAssignableInhouseCards[0]?.id || '')
+    setIsRecordAssignModalOpen(true)
+  }
+
+  const handleRecordAssignInhouse = (status: InhouseApplyStatus) => {
+    if (!isAdminSession || !recordData) return
+    const cardId = recordAssignCardId.trim()
+    if (!cardId) {
+      window.alert('내전을 선택해주세요.')
+      return
+    }
+    const targetCard = inhouseCards.find((card) => card.id === cardId) ?? null
+    if (!targetCard) {
+      window.alert('선택한 내전을 찾을 수 없습니다.')
+      return
+    }
+    const riotId = recordData.summoner.riotId.trim()
+    const normalizedRiotId = normalizeRiotIdValue(riotId)
+    if (!normalizedRiotId) {
+      window.alert('소환사 아이디 형식이 올바르지 않습니다.')
+      return
+    }
+    const signupProfile = getSignupProfileByRiotId(riotId)
+    const userLabel = (signupProfile?.accountLabel || riotId).trim()
+    const discordId = getSignupDiscordIdFromRiotId(riotId)
+    const maxSeedMemberCount = getMaxSeedMemberCountByStartAt(targetCard.startAt)
+    const appliedCount = inhouseApplications.filter((item) => item.cardId === cardId && item.status === 'applied').length
+
+    setInhouseApplications((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.cardId === cardId && normalizeRiotIdValue(item.riotId) === normalizedRiotId,
+      )
+      if (existingIndex < 0) {
+        if (status === 'applied' && appliedCount >= maxSeedMemberCount) {
+          window.alert(`신청 인원은 최대 ${maxSeedMemberCount}명까지 가능합니다.`)
+          return prev
+        }
+        return [
+          ...prev,
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            cardId,
+            userLabel,
+            status,
+            riotId,
+            discordId,
+          },
+        ]
+      }
+      const current = prev[existingIndex]
+      const currentIsApplied = current.status === 'applied'
+      if (status === 'applied' && !currentIsApplied && appliedCount >= maxSeedMemberCount) {
+        window.alert(`신청 인원은 최대 ${maxSeedMemberCount}명까지 가능합니다.`)
+        return prev
+      }
+      const next = [...prev]
+      next[existingIndex] = {
+        ...current,
+        userLabel,
+        status,
+        riotId,
+        discordId,
+      }
+      return next
+    })
+
+    closeRecordAssignModal()
   }
 
   const normalizeRiotId = (value: string) => {
@@ -4679,6 +4765,15 @@ function App() {
                               <button type="button" className="record-action-button" onClick={handleOpenFowProfile}>
                                 솔랭 전적
                               </button>
+                              {isAdminSession && (
+                                <button
+                                  type="button"
+                                  className="record-action-button record-admin-assign-button"
+                                  onClick={openRecordAssignModal}
+                                >
+                                  내전 인원 신청
+                                </button>
+                              )}
                             </div>
                           </div>
                         </article>
@@ -6077,6 +6172,49 @@ function App() {
               >
                 취소
               </button>
+            </article>
+          </section>
+        )}
+
+        {isRecordAssignModalOpen && isAdminSession && recordData && (
+          <section className="edit-modal-backdrop" aria-label="내전 인원 신청" onClick={closeRecordAssignModal}>
+            <article className="login-card record-assign-modal-card" onClick={(event) => event.stopPropagation()}>
+              <header className="notice-modal-head">
+                <h3>내전 인원 신청</h3>
+                <button type="button" className="notice-modal-close" onClick={closeRecordAssignModal} aria-label="닫기">
+                  ×
+                </button>
+              </header>
+
+              <div className="login-field-group">
+                <label htmlFor="record-assign-card">내전 목록 선택</label>
+                <select
+                  id="record-assign-card"
+                  className="login-select"
+                  value={recordAssignCardId}
+                  onChange={(event) => setRecordAssignCardId(event.target.value)}
+                >
+                  <option value="">내전 선택</option>
+                  {recordAssignableInhouseCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.startAt} - {card.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="inhouse-apply-status-actions">
+                <button type="button" className="login-submit-button" onClick={() => handleRecordAssignInhouse('applied')}>
+                  신청
+                </button>
+                <button
+                  type="button"
+                  className="signup-button inhouse-wait-button"
+                  onClick={() => handleRecordAssignInhouse('waiting')}
+                >
+                  대기
+                </button>
+              </div>
             </article>
           </section>
         )}
