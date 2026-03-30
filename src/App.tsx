@@ -136,6 +136,7 @@ const SIGNUP_STORAGE_KEY = 'league-signup-users'
 const ADMIN_PROFILE_STORAGE_KEY = 'league-admin-profile'
 const AUTH_SESSION_STORAGE_KEY = 'league-auth-session'
 const LAST_ACTIVE_MENU_STORAGE_KEY = 'league-last-active-menu'
+const LAST_RECORD_SEARCH_STORAGE_KEY = 'league-last-record-search'
 const NOTICE_READ_STATE_PREFIX = 'league-notice-read'
 const INHOUSE_CARDS_STORAGE_KEY = 'league-inhouse-cards'
 const INHOUSE_APPLICATIONS_STORAGE_KEY = 'league-inhouse-applications'
@@ -1001,6 +1002,7 @@ function App() {
   const hasLoadedNoticeItems = useRef(false)
   const hasInjectedDummyApplicantsByCardId = useRef<Record<string, true>>({})
   const isMenuHistoryPop = useRef(false)
+  const hasAutoRestoredRecordSearch = useRef(false)
 
   const baseMenus = ['홈', '전적', '내전신청', '기록']
   const visibleMenus = isAdminSession ? [...baseMenus, '관리'] : baseMenus
@@ -1167,6 +1169,24 @@ function App() {
     if (activeMenu !== '기록') return
     setRecordCategoryFilter('inhouse-apply')
   }, [activeMenu])
+
+  useEffect(() => {
+    if (hasAutoRestoredRecordSearch.current) return
+    if (isLoginPage || isUserInfoPage) return
+    if (activeMenu !== '전적') return
+    if (recordData || recordLoading) return
+    const currentInput = recordInput.trim()
+    if (currentInput) return
+    let savedRiotId = ''
+    try {
+      savedRiotId = localStorage.getItem(LAST_RECORD_SEARCH_STORAGE_KEY)?.trim() || ''
+    } catch {
+      savedRiotId = ''
+    }
+    if (!savedRiotId) return
+    hasAutoRestoredRecordSearch.current = true
+    void handleRecordSearch(savedRiotId)
+  }, [activeMenu, isLoginPage, isUserInfoPage, recordData, recordInput, recordLoading])
 
   useEffect(() => {
     if (activeMenu !== '기록' || recordCategoryFilter !== 'stats') return
@@ -1997,6 +2017,11 @@ function App() {
     if (!riotId) return
 
     setRecordInput(riotId)
+    try {
+      localStorage.setItem(LAST_RECORD_SEARCH_STORAGE_KEY, riotId)
+    } catch {
+      // ignore storage failures
+    }
     setRecordLoading(true)
     setRecordError('')
     setIsRecordErrorDetailOpen(false)
