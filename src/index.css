@@ -2178,7 +2178,7 @@ body {
 }
 
 .record-history-page {
-  width: min(100%, 1380px);
+  width: min(100%, 1240px);
 }
 
 .record-history-page .inhouse-category-sidebar {
@@ -2188,7 +2188,7 @@ body {
 }
 
 .record-history-page .inhouse-content-panel {
-  min-height: 220vh;
+  min-height: clamp(460px, 68vh, 760px);
 }
 
 .inhouse-category-sidebar {
