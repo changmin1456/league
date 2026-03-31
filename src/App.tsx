@@ -1171,6 +1171,16 @@ function App() {
   }, [activeMenu])
 
   useEffect(() => {
+    if (activeMenu === '전적') return
+    hasAutoRestoredRecordSearch.current = true
+    setRecordInput('')
+    setRecordData(null)
+    setRecordPersistedStats(null)
+    setRecordError('')
+    setIsRecordErrorDetailOpen(false)
+  }, [activeMenu])
+
+  useEffect(() => {
     if (hasAutoRestoredRecordSearch.current) return
     if (isLoginPage || isUserInfoPage) return
     if (activeMenu !== '전적') return
