@@ -5652,3 +5652,540 @@ select:focus {
   }
 
 }
+
+/* Unified app surface pass */
+:root {
+  --app-bg: #18191d;
+  --app-bg-soft: #22242a;
+  --app-nav: #24272d;
+  --app-card: rgba(40, 42, 49, 0.95);
+  --app-card-strong: rgba(47, 49, 57, 0.98);
+  --app-row: rgba(255, 255, 255, 0.045);
+  --app-row-hover: rgba(255, 255, 255, 0.075);
+  --app-border: rgba(214, 218, 226, 0.14);
+  --app-border-strong: rgba(67, 177, 157, 0.58);
+  --app-text: #f3f6fb;
+  --app-muted: #b2b8c3;
+  --app-primary: #238b7c;
+  --app-primary-hover: #1d766a;
+  --app-primary-soft: rgba(35, 139, 124, 0.2);
+  --app-danger: #d94d5f;
+  --radius-card: 12px;
+  --radius-control: 8px;
+  color: var(--app-text);
+  background-color: var(--app-bg);
+  --surface-1: var(--app-card);
+  --surface-2: var(--app-card-strong);
+  --surface-3: var(--app-row);
+  --line-1: var(--app-border-strong);
+  --line-2: var(--app-border);
+  --text-1: var(--app-text);
+  --text-2: var(--app-muted);
+  --accent-blue: var(--app-primary);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(48, 49, 56, 0.72), rgba(24, 25, 29, 0) 260px),
+    var(--app-bg);
+}
+
+.topbar {
+  height: 64px;
+  padding: 0 28px;
+  background: rgba(36, 39, 45, 0.96);
+  border-bottom: 1px solid var(--app-border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.brand-button {
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.topbar-nav {
+  gap: 2px;
+}
+
+.topbar-nav button,
+.auth-button {
+  height: 40px;
+  border-radius: 0;
+  padding: 0 12px;
+  font-size: 14px;
+  opacity: 0.82;
+  position: relative;
+}
+
+.topbar-nav button:hover,
+.auth-button:hover {
+  background: transparent;
+  opacity: 1;
+}
+
+.topbar-nav button.is-active {
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.topbar-nav button.is-active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 2px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--app-primary);
+}
+
+.page-body {
+  min-height: calc(100vh - 64px);
+  padding: 0 24px;
+  background:
+    linear-gradient(180deg, rgba(48, 49, 56, 0.56), rgba(24, 25, 29, 0) 320px),
+    var(--app-bg);
+}
+
+.template-hero,
+.record-page,
+.record-page-search,
+.inhouse-page,
+.record-history-page,
+.seed-page {
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  min-height: calc(100vh - 64px);
+  padding: 32px 0 56px;
+  gap: 16px;
+}
+
+.seed-page {
+  max-width: 1380px;
+}
+
+.template-hero {
+  align-items: stretch;
+}
+
+.template-slot,
+.searchbar-wrap,
+.info-panel,
+.schedule-panel,
+.record-search-card,
+.record-user-card,
+.record-winrate-side-card,
+.record-champion-card,
+.record-panel,
+.inhouse-category-sidebar,
+.inhouse-content-panel,
+.admin-panel,
+.login-card,
+.teamdraw-member-card,
+.inhouse-created-card,
+.record-stats-table-wrap,
+.record-detail-group,
+.bracket-group-card,
+.bracket-round-card,
+.bracket-rank-card,
+.seed-card,
+.teamselect-column,
+.notice-card,
+.notice-detail,
+.pending-card,
+.record-error-detail,
+.history-group-card,
+.history-record-card,
+.history-podium-card,
+.record-history-match-card {
+  border-radius: var(--radius-card);
+  border-color: var(--app-border);
+  background: var(--app-card);
+  box-shadow: none;
+}
+
+.template-slot {
+  width: 100%;
+  height: 248px;
+  background:
+    linear-gradient(135deg, rgba(35, 139, 124, 0.2), rgba(64, 57, 45, 0.58)),
+    var(--app-card);
+}
+
+.slot-glow {
+  background:
+    linear-gradient(90deg, rgba(35, 139, 124, 0.14), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+}
+
+.slot-card {
+  inset: 0;
+  transform: none;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 24px;
+}
+
+.slot-content {
+  width: 100%;
+  height: 100%;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: left;
+}
+
+.slot-title {
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.slot-description {
+  color: var(--app-muted);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.slot-metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.slot-metric-row span {
+  min-width: 86px;
+  height: 42px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.slot-metric-row strong {
+  color: var(--app-text);
+  font-size: 20px;
+}
+
+.searchbar-wrap {
+  width: 100%;
+  height: 50px;
+  border-radius: var(--radius-card);
+  padding: 0 10px;
+  background: var(--app-card-strong);
+}
+
+.schedule-panel,
+.stats-grid {
+  width: 100%;
+}
+
+.info-panel,
+.schedule-panel,
+.record-panel,
+.inhouse-content-panel,
+.admin-panel,
+.login-card {
+  padding: 16px;
+}
+
+.panel-list li,
+.record-panel li,
+.teamdraw-member-card,
+.inhouse-created-card,
+.admin-user-row,
+.record-log-row,
+.saved-bracket-row,
+.record-stats-summary-card,
+.record-rank-card,
+.notice-card,
+.user-info-list p {
+  border: 1px solid var(--app-border);
+  background: var(--app-row);
+}
+
+.panel-list li:hover,
+.inhouse-created-card:hover,
+.teamdraw-member-card:hover,
+.admin-user-row:hover,
+.record-log-row:hover {
+  background: var(--app-row-hover);
+}
+
+.record-headline {
+  padding: 0 2px;
+}
+
+.record-headline h2 {
+  font-size: 30px;
+  letter-spacing: 0;
+}
+
+.record-headline p {
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.record-search-card {
+  padding: 16px;
+}
+
+.record-search-title strong,
+.panel-title-link,
+.panel-title-static,
+.inhouse-content-panel h3,
+.record-panel h4 {
+  font-size: 18px;
+}
+
+.record-search-input,
+.login-input,
+.notice-textarea,
+.user-info-input,
+.teamselect-inline-select,
+.record-champion-search {
+  border-color: var(--app-border);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--app-text);
+}
+
+.record-search-button,
+.login-submit-button,
+.record-action-button,
+.inhouse-teamdraw-button,
+.teamdraw-nav-button.is-primary,
+.teamselect-inline-button.is-primary,
+.panel-apply-button,
+.search-icon-button,
+.saved-bracket-open-button,
+.record-refresh-button,
+.record-history-add-button,
+.bracket-code-button {
+  border-color: var(--app-primary);
+  border-radius: var(--radius-control);
+  background: var(--app-primary);
+  color: #ffffff;
+}
+
+.record-search-button:hover,
+.login-submit-button:hover,
+.record-action-button:hover,
+.inhouse-teamdraw-button:hover,
+.teamdraw-nav-button.is-primary:hover,
+.panel-apply-button:hover,
+.search-icon-button:hover,
+.saved-bracket-open-button:hover,
+.record-refresh-button:hover,
+.record-history-add-button:hover,
+.bracket-code-button:hover {
+  background: var(--app-primary-hover);
+}
+
+.signup-button,
+.inhouse-edit-button,
+.record-admin-assign-button,
+.teamdraw-nav-button,
+.record-detail-separator,
+.bracket-match-action-button {
+  border-color: var(--app-border);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.92);
+  color: #202838;
+}
+
+.signup-button:hover,
+.inhouse-edit-button:hover,
+.record-admin-assign-button:hover,
+.teamdraw-nav-button:hover,
+.record-detail-separator:hover,
+.bracket-match-action-button:hover {
+  background: #ffffff;
+}
+
+.inhouse-modal-delete-button,
+.admin-delete-button,
+.admin-reject-button,
+.notice-card-delete {
+  border-color: rgba(217, 77, 95, 0.7);
+  border-radius: var(--radius-control);
+  background: rgba(217, 77, 95, 0.22);
+  color: #ffdbe0;
+}
+
+.inhouse-modal-delete-button:hover,
+.admin-delete-button:hover,
+.admin-reject-button:hover,
+.notice-card-delete:hover {
+  background: rgba(217, 77, 95, 0.34);
+}
+
+.inhouse-category-list button,
+.admin-sidebar button,
+.record-stats-tabs button,
+.record-category-tabs button,
+.admin-type-filter button,
+.record-main-tabs button {
+  border-radius: var(--radius-control);
+}
+
+.inhouse-category-list button.is-active,
+.admin-sidebar button.is-active,
+.record-category-tabs button.is-active,
+.admin-type-filter button.is-active,
+.record-main-tabs button.is-active {
+  border-color: var(--app-border-strong);
+  background: var(--app-primary-soft);
+  color: var(--app-text);
+}
+
+.record-stats-tabs {
+  gap: 6px;
+  border-bottom: 0;
+}
+
+.record-stats-tabs button {
+  height: 42px;
+  border: 1px solid var(--app-border);
+  background: var(--app-row);
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
+.record-stats-tabs button.is-active {
+  border-color: var(--app-border-strong);
+  background: var(--app-primary-soft);
+  color: var(--app-text);
+}
+
+.record-user-card,
+.record-winrate-side-card {
+  border-radius: var(--radius-card);
+}
+
+.record-result-grid {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.record-winrate-card {
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.record-rank-badge,
+.record-extra-pill-primary {
+  background: var(--app-primary);
+}
+
+.record-rank-stat,
+.record-extra-pill,
+.record-discord-inline-chip,
+.stats-top30-chip,
+.record-search-title span,
+.record-history-match-chip,
+.notice-unread-bubble,
+.admin-category-badge {
+  border-radius: 999px;
+}
+
+.record-discord-inline-chip {
+  background: #5865f2;
+}
+
+.region-chip {
+  border: 1px solid rgba(214, 159, 62, 0.5);
+  background: rgba(183, 121, 31, 0.22);
+  color: #f3c46b;
+}
+
+.record-search-title span {
+  border: 1px solid rgba(214, 159, 62, 0.5);
+  background: rgba(183, 121, 31, 0.22);
+  color: #f3c46b;
+}
+
+.seed-card {
+  background: rgba(45, 63, 84, 0.94);
+}
+
+.bracket-group-card,
+.bracket-round-card,
+.bracket-rank-card,
+.record-detail-group {
+  background: rgba(37, 43, 49, 0.94);
+}
+
+.bracket-round-header {
+  background: rgba(17, 24, 36, 0.8);
+}
+
+.match-detail-modal-card,
+.match-detail-board,
+.match-detail-table-row,
+.match-detail-board-head,
+.match-detail-column-header {
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .page-body {
+    min-height: calc(100vh - 60px);
+    padding: 0 12px;
+  }
+
+  .template-hero,
+  .record-page,
+  .record-page-search,
+  .inhouse-page,
+  .record-history-page,
+  .seed-page {
+    min-height: calc(100vh - 60px);
+    padding: 20px 0 32px;
+  }
+
+  .template-slot {
+    height: 220px;
+  }
+
+  .slot-card {
+    padding: 18px;
+  }
+
+  .slot-title {
+    font-size: 34px;
+  }
+
+  .slot-description {
+    font-size: 15px;
+  }
+
+  .slot-metric-row span {
+    min-width: 72px;
+    height: 38px;
+  }
+
+  .record-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .record-headline h2 {
+    font-size: 26px;
+  }
+}

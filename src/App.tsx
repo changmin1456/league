@@ -3727,8 +3727,22 @@ function App() {
               <div className="slot-glow" aria-hidden="true" />
               <div className="slot-card">
                 <div className="slot-content">
-                  <h2 className="slot-title">서버 템플릿 카드</h2>
-                  <p className="slot-description">서버에서 내려준 컴포넌트가 이 영역 안에 렌더링됩니다.</p>
+                  <h2 className="slot-title">LEAGUE</h2>
+                  <p className="slot-description">내전 현황판</p>
+                  <div className="slot-metric-row" aria-label="홈 요약">
+                    <span>
+                      <strong>{homeMvpTopRows.length}</strong>
+                      MVP
+                    </span>
+                    <span>
+                      <strong>{homeKdaTopRows.length}</strong>
+                      KDA
+                    </span>
+                    <span>
+                      <strong>{homeUpcomingInhouseCards.length}</strong>
+                      일정
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4654,7 +4668,7 @@ function App() {
         {!isLoginPage && !isUserInfoPage && activeMenu === '전적' && (
           <section className="record-page record-page-search">
             <header className="record-headline">
-              <h2>내전 전적 검색</h2>
+              <h2>전적 검색</h2>
               <p>소환사를 검색해 프로필을 확인하세요.</p>
             </header>
 
@@ -4922,7 +4936,7 @@ function App() {
                     className={recordCategoryFilter === 'stats' ? 'is-active' : ''}
                     onClick={() => setRecordCategoryFilter('stats')}
                   >
-                    통계
+                    랭킹
                   </button>
                 </div>
               </aside>
@@ -4934,13 +4948,9 @@ function App() {
                       ? '내전 기록'
                       : recordCategoryFilter === 'bet-apply'
                         ? '내기 기록'
-                        : recordCategoryFilter === 'detail-record'
-                          ? '상세 기록'
-                          : (
-                              <>
-                                통계 <span className="stats-top30-chip">🏆 TOP 30</span>
-                              </>
-                            )}
+                          : recordCategoryFilter === 'detail-record'
+                            ? '상세 기록'
+                            : 'TOP30 랭킹'}
                   </h3>
                 </div>
 
@@ -4952,28 +4962,28 @@ function App() {
                         className={recordStatsView === 'winrate' ? 'is-active' : ''}
                         onClick={() => setRecordStatsView('winrate')}
                       >
-                        승률 랭킹
+                        승률
                       </button>
                       <button
                         type="button"
                         className={recordStatsView === 'games' ? 'is-active' : ''}
                         onClick={() => setRecordStatsView('games')}
                       >
-                        판수 랭킹
+                        판수
                       </button>
                       <button
                         type="button"
                         className={recordStatsView === 'kda' ? 'is-active' : ''}
                         onClick={() => setRecordStatsView('kda')}
                       >
-                        KDA 랭킹
+                        KDA
                       </button>
                       <button
                         type="button"
                         className={recordStatsView === 'damage' ? 'is-active' : ''}
                         onClick={() => setRecordStatsView('damage')}
                       >
-                        딜량 랭킹
+                        딜량
                       </button>
                     </div>
                     {recordStatsError && <p className="record-error">{recordStatsError}</p>}
