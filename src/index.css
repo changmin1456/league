@@ -5684,6 +5684,32 @@ select:focus {
   --accent-blue: var(--app-primary);
 }
 
+:root[data-theme='light'] {
+  --app-bg: #f4f6f8;
+  --app-bg-soft: #e9edf2;
+  --app-nav: #ffffff;
+  --app-card: rgba(255, 255, 255, 0.96);
+  --app-card-strong: rgba(255, 255, 255, 0.99);
+  --app-row: rgba(21, 28, 38, 0.045);
+  --app-row-hover: rgba(21, 28, 38, 0.075);
+  --app-border: rgba(31, 42, 58, 0.14);
+  --app-border-strong: rgba(28, 133, 119, 0.48);
+  --app-text: #17202c;
+  --app-muted: #667085;
+  --app-primary: #1f8a7a;
+  --app-primary-hover: #176f63;
+  --app-primary-soft: rgba(31, 138, 122, 0.12);
+  --surface-1: var(--app-card);
+  --surface-2: var(--app-card-strong);
+  --surface-3: var(--app-row);
+  --line-1: var(--app-border-strong);
+  --line-2: var(--app-border);
+  --text-1: var(--app-text);
+  --text-2: var(--app-muted);
+  color: var(--app-text);
+  background-color: var(--app-bg);
+}
+
 body {
   background:
     linear-gradient(180deg, rgba(48, 49, 56, 0.72), rgba(24, 25, 29, 0) 260px),
@@ -5706,6 +5732,71 @@ body {
 
 .topbar-nav {
   gap: 2px;
+}
+
+.theme-toggle-button {
+  height: 34px;
+  width: 34px;
+  min-width: 34px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text);
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  text-indent: -999px;
+  position: relative;
+}
+
+.theme-toggle-button::before {
+  content: '';
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
+}
+
+.theme-toggle-button::after {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--app-nav);
+  transform: translate(5px, -4px);
+}
+
+:root[data-theme='light'] .theme-toggle-button::before {
+  width: 12px;
+  height: 12px;
+  background: transparent;
+  border: 2px solid #2f3642;
+  box-shadow:
+    0 -10px 0 -6px #2f3642,
+    0 10px 0 -6px #2f3642,
+    10px 0 0 -6px #2f3642,
+    -10px 0 0 -6px #2f3642,
+    7px 7px 0 -6px #2f3642,
+    -7px 7px 0 -6px #2f3642,
+    7px -7px 0 -6px #2f3642,
+    -7px -7px 0 -6px #2f3642;
+}
+
+:root[data-theme='light'] .theme-toggle-button::after {
+  display: none;
+}
+
+.theme-toggle-button:hover {
+  background: transparent;
+  opacity: 0.82;
 }
 
 .topbar-nav button,
@@ -6137,6 +6228,92 @@ body {
 .match-detail-board-head,
 .match-detail-column-header {
   box-shadow: none;
+}
+
+:root[data-theme='light'] body {
+  background:
+    linear-gradient(180deg, rgba(226, 231, 238, 0.88), rgba(244, 246, 248, 0) 260px),
+    var(--app-bg);
+}
+
+:root[data-theme='light'] .page-body {
+  background:
+    linear-gradient(180deg, rgba(226, 231, 238, 0.82), rgba(244, 246, 248, 0) 320px),
+    var(--app-bg);
+}
+
+:root[data-theme='light'] .topbar {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--app-text);
+}
+
+:root[data-theme='light'] .brand-button,
+:root[data-theme='light'] .topbar-nav button,
+:root[data-theme='light'] .auth-button,
+:root[data-theme='light'] .notice-modal-head h3,
+:root[data-theme='light'] .notice-card-title,
+:root[data-theme='light'] .bracket-team-name,
+:root[data-theme='light'] .record-stats-summoner-button,
+:root[data-theme='light'] .home-top-name-button {
+  color: var(--app-text);
+}
+
+:root[data-theme='light'] .notice-open-button svg {
+  fill: var(--app-text);
+}
+
+:root[data-theme='light'] .template-slot {
+  background:
+    linear-gradient(135deg, rgba(31, 138, 122, 0.14), rgba(229, 173, 76, 0.16)),
+    var(--app-card);
+}
+
+:root[data-theme='light'] .slot-glow {
+  background:
+    linear-gradient(90deg, rgba(31, 138, 122, 0.08), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65), transparent);
+}
+
+:root[data-theme='light'] .record-search-input,
+:root[data-theme='light'] .login-input,
+:root[data-theme='light'] .notice-textarea,
+:root[data-theme='light'] .user-info-input,
+:root[data-theme='light'] .teamselect-inline-select,
+:root[data-theme='light'] .record-champion-search {
+  background: rgba(15, 23, 42, 0.035);
+  color: var(--app-text);
+}
+
+:root[data-theme='light'] .record-winrate-card,
+:root[data-theme='light'] .record-winrate-chart::before,
+:root[data-theme='light'] .bracket-round-header,
+:root[data-theme='light'] .bracket-group-card,
+:root[data-theme='light'] .bracket-round-card,
+:root[data-theme='light'] .bracket-rank-card,
+:root[data-theme='light'] .record-detail-group,
+:root[data-theme='light'] .seed-card,
+:root[data-theme='light'] .teamselect-column {
+  background: var(--app-card);
+}
+
+:root[data-theme='light'] .panel-empty,
+:root[data-theme='light'] .record-panel li,
+:root[data-theme='light'] .champion-top-item {
+  background: var(--app-row);
+}
+
+:root[data-theme='light'] .record-error-detail,
+:root[data-theme='light'] .notice-card-content,
+:root[data-theme='light'] .inhouse-record-expand {
+  background: rgba(15, 23, 42, 0.035);
+}
+
+:root[data-theme='light'] .match-detail-modal-card,
+:root[data-theme='light'] .match-detail-board,
+:root[data-theme='light'] .match-detail-table-row,
+:root[data-theme='light'] .match-detail-board-head,
+:root[data-theme='light'] .match-detail-column-header {
+  background: #ffffff;
 }
 
 @media (max-width: 768px) {

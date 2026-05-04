@@ -136,6 +136,7 @@ const SIGNUP_STORAGE_KEY = 'league-signup-users'
 const ADMIN_PROFILE_STORAGE_KEY = 'league-admin-profile'
 const AUTH_SESSION_STORAGE_KEY = 'league-auth-session'
 const LAST_ACTIVE_MENU_STORAGE_KEY = 'league-last-active-menu'
+const THEME_STORAGE_KEY = 'league-color-theme'
 const LAST_RECORD_SEARCH_STORAGE_KEY = 'league-last-record-search'
 const NOTICE_READ_STATE_PREFIX = 'league-notice-read'
 const INHOUSE_CARDS_STORAGE_KEY = 'league-inhouse-cards'
@@ -882,6 +883,13 @@ function App() {
     if (menuFromHash !== '홈') return menuFromHash
     return readLastActiveMenu()
   })
+  const [colorTheme, setColorTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
   const [isLoginPage, setIsLoginPage] = useState(true)
   const [isUserInfoPage, setIsUserInfoPage] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'pending'>('login')
@@ -1094,6 +1102,16 @@ function App() {
     stat.winRate = total > 0 ? Math.round((stat.wins / total) * 100) : 0
     stat.winStreak = streak
   })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = colorTheme
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, colorTheme)
+    } catch {
+      // Ignore storage errors; theme still applies for this session.
+    }
+  }, [colorTheme])
+
   useEffect(() => {
     let cancelled = false
     const toIconUrl = (iconPath: string) => {
@@ -3373,6 +3391,14 @@ function App() {
         </div>
 
         <div className="topbar-right">
+          <button
+            className="theme-toggle-button"
+            type="button"
+            onClick={() => setColorTheme((theme) => (theme === 'dark' ? 'light' : 'dark'))}
+            aria-label={colorTheme === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}
+          >
+            {colorTheme === 'dark' ? '달' : '해'}
+          </button>
           {!isLoginPage && !isUserInfoPage && currentUserLabel.trim() && (
             <button type="button" className="notice-open-button" onClick={openNoticeModal} aria-label="공지사항 열기">
               <svg viewBox="0 0 24 24" aria-hidden="true">
