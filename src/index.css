@@ -6496,6 +6496,23 @@ body {
   background: #ffffff;
 }
 
+:root[data-theme='light'] .inhouse-modal-delete-button,
+:root[data-theme='light'] .admin-delete-button,
+:root[data-theme='light'] .admin-reject-button,
+:root[data-theme='light'] .notice-card-delete {
+  border-color: rgba(217, 77, 95, 0.72);
+  background: rgba(217, 77, 95, 0.18);
+  color: #b42318;
+}
+
+:root[data-theme='light'] .inhouse-modal-delete-button:hover,
+:root[data-theme='light'] .admin-delete-button:hover,
+:root[data-theme='light'] .admin-reject-button:hover,
+:root[data-theme='light'] .notice-card-delete:hover {
+  background: rgba(217, 77, 95, 0.26);
+  color: #971b12;
+}
+
 .inhouse-content-header .inhouse-create-button,
 .duo-create-button {
   min-width: 148px;
@@ -6576,7 +6593,8 @@ body {
 
 .duo-board-head {
   padding: 0 18px;
-  min-height: 36px;
+  min-height: 42px;
+  border-bottom: 1px solid var(--app-border);
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 900;
