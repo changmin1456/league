@@ -146,6 +146,8 @@ const TEAM_BRACKETS_STORAGE_KEY = 'league-team-brackets'
 const INHOUSE_BRACKET_RECORDS_STORAGE_KEY = 'league-inhouse-bracket-records'
 const MATCH_DETAIL_ID_MAP_STORAGE_KEY = 'league-match-detail-id-map'
 const NOTICE_ITEMS_STORAGE_KEY = 'league-notice-items'
+const DUO_POSTS_STORAGE_KEY = 'league-duo-posts'
+const DUO_POST_COOLDOWN_MS = 10 * 60 * 1000
 const PERSIST_STATE_KEYS = [
   SIGNUP_STORAGE_KEY,
   ADMIN_PROFILE_STORAGE_KEY,
@@ -156,12 +158,14 @@ const PERSIST_STATE_KEYS = [
   INHOUSE_BRACKET_RECORDS_STORAGE_KEY,
   MATCH_DETAIL_ID_MAP_STORAGE_KEY,
   NOTICE_ITEMS_STORAGE_KEY,
+  DUO_POSTS_STORAGE_KEY,
 ] as const
 const DDRAGON_VERSION = '14.24.1'
 const ADMIN_ACCOUNT = {
   id: 'admin',
   password: '862588',
 }
+const ADMIN_LOGIN_KEYS = [ADMIN_ACCOUNT.id, 'admin#ADMIN'].map((value) => value.toLowerCase())
 
 type AdminProfile = {
   accountLabel: string
@@ -314,15 +318,21 @@ const normalizeRiotIdValue = (value: string) => {
 const INHOUSE_CATEGORY_OPTIONS = [
   {
     value: 'inhouse-apply',
-    label: '내전 신청',
-    title: '내전 신청',
+    label: '내전 모집',
+    title: '내전 모집',
     description: '내전 참여 신청 폼을 여기에 배치할 예정입니다.',
   },
   {
     value: 'bet-apply',
-    label: '내기 신청',
-    title: '내기 신청',
+    label: '내기 모집',
+    title: '내기 모집',
     description: '내기전 참여 신청 폼을 여기에 배치할 예정입니다.',
+  },
+  {
+    value: 'duo-apply',
+    label: '듀오 모집',
+    title: '듀오 모집',
+    description: '듀오 참여 모집 폼을 여기에 배치할 예정입니다.',
   },
 ] as const
 
@@ -344,6 +354,22 @@ type InhouseApplication = {
   status: InhouseApplyStatus
   riotId: string
   discordId: string
+}
+
+type DuoPosition = 'ANY' | 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUP'
+
+type DuoPost = {
+  id: string
+  authorKey: string
+  userLabel: string
+  riotId: string
+  profileIconId: number | null
+  mainPosition: DuoPosition
+  targetPosition: DuoPosition
+  queueType: string
+  mic: boolean
+  memo: string
+  createdAt: number
 }
 
 type InhouseMatchRecord = {
@@ -551,6 +577,77 @@ const readInhouseApplications = (): InhouseApplication[] => {
   }
 }
 
+const DUO_POSITIONS: Array<{ value: DuoPosition; label: string }> = [
+  { value: 'ANY', label: '전체' },
+  { value: 'TOP', label: '탑' },
+  { value: 'JUNGLE', label: '정글' },
+  { value: 'MID', label: '미드' },
+  { value: 'ADC', label: '원딜' },
+  { value: 'SUP', label: '서폿' },
+]
+
+const DUO_POSITION_ICON_BY_VALUE: Record<DuoPosition, string> = {
+  ANY: '/Specialist_icon.png',
+  TOP: '/Top_icon.png',
+  JUNGLE: '/Jungle_icon.png',
+  MID: '/Middle_icon.png',
+  ADC: '/Bottom_icon.png',
+  SUP: '/Support_icon.png',
+}
+
+const readDuoPosts = (): DuoPost[] => {
+  try {
+    const raw = localStorage.getItem(DUO_POSTS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== 'object') return []
+      const record = item as Record<string, unknown>
+      const isPosition = (value: unknown): value is DuoPosition =>
+        typeof value === 'string' && DUO_POSITIONS.some((position) => position.value === value)
+      if (
+        typeof record.id !== 'string' ||
+        typeof record.authorKey !== 'string' ||
+        typeof record.userLabel !== 'string' ||
+        typeof record.riotId !== 'string' ||
+        typeof record.createdAt !== 'number'
+      ) {
+        return []
+      }
+      return [
+        {
+          id: record.id,
+          authorKey: record.authorKey,
+          userLabel: record.userLabel,
+          riotId: record.riotId,
+          profileIconId: typeof record.profileIconId === 'number' ? record.profileIconId : null,
+          mainPosition: isPosition(record.mainPosition) ? record.mainPosition : 'ANY',
+          targetPosition: isPosition(record.targetPosition) ? record.targetPosition : 'ANY',
+          queueType: typeof record.queueType === 'string' ? record.queueType : '솔로랭크',
+          mic: typeof record.mic === 'boolean' ? record.mic : false,
+          memo: typeof record.memo === 'string' ? record.memo : '함께 할 듀오 파트너를 찾고있어요.',
+          createdAt: record.createdAt,
+        } satisfies DuoPost,
+      ]
+    })
+  } catch {
+    return []
+  }
+}
+
+const fetchDuoProfileIconId = async (riotId: string) => {
+  try {
+    const response = await fetch(`/api/riot/profile?riotId=${encodeURIComponent(riotId)}`)
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!response.ok || !contentType.includes('application/json')) return null
+    const data = (await response.json()) as RiotProfileResponse
+    return typeof data.summoner?.profileIconId === 'number' ? data.summoner.profileIconId : null
+  } catch {
+    return null
+  }
+}
+
 const readInhouseMatchRecords = (): InhouseMatchRecord[] => {
   try {
     const raw = localStorage.getItem(INHOUSE_MATCH_RECORDS_STORAGE_KEY)
@@ -697,8 +794,9 @@ const readInhouseBracketRecords = (): InhouseBracketRecord[] => {
       ) {
         return []
       }
-      const category =
-        record.category === 'inhouse-apply' || record.category === 'bet-apply' ? record.category : 'inhouse-apply'
+      const category = INHOUSE_CATEGORY_OPTIONS.some((option) => option.value === record.category)
+        ? (record.category as InhouseCategoryValue)
+        : 'inhouse-apply'
       const groups = record.groups.flatMap((group) => {
         if (!group || typeof group !== 'object') return []
         const groupRecord = group as Record<string, unknown>
@@ -860,19 +958,20 @@ function App() {
   const TEAM_DRAW_MENU = '시드'
   const TEAM_SELECT_MENU = '팀 선정'
   const TEAM_BRACKET_MENU = '대진표'
+  const normalizeMenuName = (menu: string) => (menu === '내전신청' ? '모집' : menu)
   const readMenuFromHash = () => {
     const rawHash = window.location.hash.replace(/^#/, '')
     if (!rawHash) return '홈'
     try {
       const decoded = decodeURIComponent(rawHash).trim()
-      return decoded || '홈'
+      return normalizeMenuName(decoded || '홈')
     } catch {
       return '홈'
     }
   }
   const readLastActiveMenu = () => {
     try {
-      return localStorage.getItem(LAST_ACTIVE_MENU_STORAGE_KEY)?.trim() || '홈'
+      return normalizeMenuName(localStorage.getItem(LAST_ACTIVE_MENU_STORAGE_KEY)?.trim() || '홈')
     } catch {
       return '홈'
     }
@@ -966,6 +1065,15 @@ function App() {
   const [inhouseEditFeedback, setInhouseEditFeedback] = useState('')
   const [inhouseCards, setInhouseCards] = useState<InhouseCard[]>(() => readInhouseCards())
   const [inhouseApplications, setInhouseApplications] = useState<InhouseApplication[]>(() => readInhouseApplications())
+  const [duoPosts, setDuoPosts] = useState<DuoPost[]>(() => readDuoPosts())
+  const [isDuoCreateModalOpen, setIsDuoCreateModalOpen] = useState(false)
+  const [duoRiotIdInput, setDuoRiotIdInput] = useState('')
+  const [duoMainPosition, setDuoMainPosition] = useState<DuoPosition>('ANY')
+  const [duoTargetPosition, setDuoTargetPosition] = useState<DuoPosition>('ANY')
+  const [duoQueueType, setDuoQueueType] = useState('솔로랭크')
+  const [duoMic, setDuoMic] = useState(false)
+  const [duoMemo, setDuoMemo] = useState('함께 할 듀오 파트너를 찾고있어요.')
+  const [duoFeedback, setDuoFeedback] = useState('')
   const [inhouseMatchRecords, setInhouseMatchRecords] = useState<InhouseMatchRecord[]>(() => readInhouseMatchRecords())
   const [inhouseBracketRecords, setInhouseBracketRecords] = useState<InhouseBracketRecord[]>(() => readInhouseBracketRecords())
   const [inhouseCategory, setInhouseCategory] = useState<InhouseCategoryValue>(INHOUSE_CATEGORY_OPTIONS[0].value)
@@ -1004,6 +1112,7 @@ function App() {
   const [perkIconById, setPerkIconById] = useState<Record<number, string>>({})
   const hasLoadedInhouseCards = useRef(false)
   const hasLoadedInhouseApplications = useRef(false)
+  const hasLoadedDuoPosts = useRef(false)
   const hasLoadedInhouseMatchRecords = useRef(false)
   const hasLoadedInhouseBracketRecords = useRef(false)
   const hasLoadedTeamBrackets = useRef(false)
@@ -1012,10 +1121,23 @@ function App() {
   const isMenuHistoryPop = useRef(false)
   const hasAutoRestoredRecordSearch = useRef(false)
 
-  const baseMenus = ['홈', '전적', '내전신청', '기록']
+  const baseMenus = ['홈', '전적', '모집', '기록']
   const visibleMenus = isAdminSession ? [...baseMenus, '관리'] : baseMenus
   const currentInhouseCategory =
     INHOUSE_CATEGORY_OPTIONS.find((category) => category.value === inhouseCategory) ?? INHOUSE_CATEGORY_OPTIONS[0]
+  const currentUserAccessKey = currentUserLabel.trim().toLowerCase()
+  const canManageDuoPosts =
+    isAdminSession ||
+    (currentUserAccessKey !== '' &&
+      readSignupProfiles().some((profile) => {
+        const accountKey = (profile.accountLabel || profile.riotId).trim().toLowerCase()
+        const riotKey = profile.riotId.trim().toLowerCase()
+        return (
+          (accountKey === currentUserAccessKey || riotKey === currentUserAccessKey) &&
+          profile.approvalStatus === 'approved' &&
+          profile.userType === '운영진'
+        )
+      }))
   const currentInhouseCards = inhouseCards
     .filter((card) => card.category === inhouseCategory)
     .sort((a, b) => {
@@ -1165,7 +1287,7 @@ function App() {
 
   useEffect(() => {
     if (activeMenu === '관리') {
-      setAdminCategory('가입승인')
+      setAdminCategory('유저관리')
       setUserTypeFilter('전체')
     }
   }, [activeMenu])
@@ -1254,6 +1376,10 @@ function App() {
       setHomeTopError('')
       try {
         const response = await fetch('/api/stats/home-top')
+        const contentType = response.headers.get('content-type') ?? ''
+        if (!contentType.includes('application/json')) {
+          throw new Error('HOME_TOP_API_NOT_JSON')
+        }
         const data = (await response.json()) as {
           error?: string
           mvpTopRows?: HomeMvpTopRow[]
@@ -1268,11 +1394,15 @@ function App() {
         }
         setHomeMvpTopRows(Array.isArray(data.mvpTopRows) ? data.mvpTopRows : [])
         setHomeKdaTopRows(Array.isArray(data.kdaTopRows) ? data.kdaTopRows : [])
-      } catch {
+      } catch (error) {
         if (cancelled) return
         setHomeMvpTopRows([])
         setHomeKdaTopRows([])
-        setHomeTopError('홈 통계 로딩 중 오류가 발생했습니다.')
+        setHomeTopError(
+          error instanceof Error && error.message === 'HOME_TOP_API_NOT_JSON'
+            ? '로컬 Vite 서버에서는 홈 통계 API가 실행되지 않습니다.'
+            : '홈 통계 로딩 중 오류가 발생했습니다.',
+        )
       } finally {
         if (!cancelled) setHomeTopLoading(false)
       }
@@ -1348,6 +1478,7 @@ function App() {
 
         setInhouseCards(readInhouseCards())
         setInhouseApplications(readInhouseApplications())
+        setDuoPosts(readDuoPosts())
         setInhouseMatchRecords(readInhouseMatchRecords())
         setInhouseBracketRecords(readInhouseBracketRecords())
         setTeamBracketByCardId(readTeamBrackets())
@@ -1381,6 +1512,55 @@ function App() {
     localStorage.setItem(INHOUSE_APPLICATIONS_STORAGE_KEY, JSON.stringify(inhouseApplications))
     persistStateToServer(INHOUSE_APPLICATIONS_STORAGE_KEY, inhouseApplications)
   }, [inhouseApplications])
+
+  useEffect(() => {
+    if (!hasLoadedDuoPosts.current) {
+      hasLoadedDuoPosts.current = true
+      return
+    }
+    localStorage.setItem(DUO_POSTS_STORAGE_KEY, JSON.stringify(duoPosts))
+    persistStateToServer(DUO_POSTS_STORAGE_KEY, duoPosts)
+  }, [duoPosts])
+
+  useEffect(() => {
+    const missingRiotIds = Array.from(
+      new Set(
+        duoPosts
+          .filter((post) => !(typeof post.profileIconId === 'number' && post.profileIconId > 0))
+          .map((post) => post.riotId.trim())
+          .filter(Boolean),
+      ),
+    )
+    if (missingRiotIds.length === 0) return
+
+    let isCancelled = false
+    const hydrateDuoProfileIcons = async () => {
+      const results = await Promise.all(
+        missingRiotIds.map(async (riotId) => [riotId, await fetchDuoProfileIconId(riotId)] as const),
+      )
+      if (isCancelled) return
+
+      const iconIdByRiotId = results.reduce<Record<string, number>>((acc, [riotId, profileIconId]) => {
+        if (typeof profileIconId === 'number' && profileIconId > 0) {
+          acc[riotId] = profileIconId
+        }
+        return acc
+      }, {})
+      if (Object.keys(iconIdByRiotId).length === 0) return
+
+      setDuoPosts((prev) =>
+        prev.map((post) => {
+          const profileIconId = iconIdByRiotId[post.riotId.trim()]
+          return typeof profileIconId === 'number' && profileIconId > 0 ? { ...post, profileIconId } : post
+        }),
+      )
+    }
+
+    void hydrateDuoProfileIcons()
+    return () => {
+      isCancelled = true
+    }
+  }, [duoPosts])
 
   useEffect(() => {
     if (!isAdminSession || !teamDrawCardId) return
@@ -2117,6 +2297,127 @@ function App() {
     return value
   }
 
+  const getCurrentDuoAuthorKey = () => currentUserLabel.trim().toLowerCase()
+
+  const getDefaultDuoRiotId = () => {
+    const userKey = getCurrentDuoAuthorKey()
+    if (!userKey) return ''
+    const signupProfile =
+      readSignupProfiles().find((item) => {
+        const accountKey = item.accountLabel.trim().toLowerCase()
+        const riotKey = item.riotId.trim().toLowerCase()
+        return accountKey === userKey || riotKey === userKey
+      }) ?? null
+    if (signupProfile?.riotId) return signupProfile.riotId
+    const adminProfile = readAdminProfile()
+    if (adminProfile.accountLabel.trim().toLowerCase() === userKey) return adminProfile.riotId
+    return currentUserLabel.trim()
+  }
+
+  const getDuoCooldownRemainingMs = (authorKey: string) => {
+    const latestPost = duoPosts
+      .filter((post) => post.authorKey === authorKey)
+      .sort((a, b) => b.createdAt - a.createdAt)[0]
+    if (!latestPost) return 0
+    return Math.max(0, DUO_POST_COOLDOWN_MS - (Date.now() - latestPost.createdAt))
+  }
+
+  const formatDuoCooldown = (milliseconds: number) => {
+    const totalSeconds = Math.ceil(milliseconds / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    if (minutes <= 0) return `${seconds}초`
+    return `${minutes}분 ${String(seconds).padStart(2, '0')}초`
+  }
+
+  const formatDuoCreatedAt = (createdAt: number) => {
+    const diff = Math.max(0, Date.now() - createdAt)
+    const minutes = Math.floor(diff / 60000)
+    if (minutes < 1) return '방금 전'
+    if (minutes < 60) return `${minutes}분 전`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}시간 전`
+    return `${Math.floor(hours / 24)}일 전`
+  }
+
+  const getDuoPositionLabel = (value: DuoPosition) =>
+    DUO_POSITIONS.find((position) => position.value === value)?.label ?? '전체'
+
+  const openDuoCreateModal = () => {
+    const authorKey = getCurrentDuoAuthorKey()
+    if (!authorKey) {
+      window.alert('로그인 후 듀오 글을 작성할 수 있습니다.')
+      return
+    }
+    const remainingMs = getDuoCooldownRemainingMs(authorKey)
+    if (remainingMs > 0) {
+      window.alert(`듀오 모집 글은 아이디당 10분에 한 번만 등록할 수 있습니다. ${formatDuoCooldown(remainingMs)} 후 다시 시도해주세요.`)
+      return
+    }
+    setDuoRiotIdInput(getDefaultDuoRiotId())
+    setDuoMainPosition('ANY')
+    setDuoTargetPosition('ANY')
+    setDuoQueueType('솔로랭크')
+    setDuoMic(false)
+    setDuoMemo('함께 할 듀오 파트너를 찾고있어요.')
+    setDuoFeedback('')
+    setIsDuoCreateModalOpen(true)
+  }
+
+  const handleCreateDuoPost = async () => {
+    const authorKey = getCurrentDuoAuthorKey()
+    const riotId = duoRiotIdInput.trim()
+    const memo = duoMemo.trim()
+    if (!authorKey) {
+      setDuoFeedback('로그인 후 등록할 수 있습니다.')
+      return
+    }
+    const remainingMs = getDuoCooldownRemainingMs(authorKey)
+    if (remainingMs > 0) {
+      setDuoFeedback(`아이디당 10분 제한이 적용됩니다. ${formatDuoCooldown(remainingMs)} 후 다시 등록해주세요.`)
+      return
+    }
+    if (!riotId) {
+      setDuoFeedback('소환사 이름을 입력해주세요.')
+      return
+    }
+    if (!memo) {
+      setDuoFeedback('메모를 입력해주세요.')
+      return
+    }
+    const now = Date.now()
+    const profileIconId = await fetchDuoProfileIconId(riotId)
+    setDuoPosts((prev) => [
+      {
+        id: `duo-${now}-${Math.random().toString(36).slice(2, 8)}`,
+        authorKey,
+        userLabel: currentUserLabel.trim(),
+        riotId,
+        profileIconId,
+        mainPosition: duoMainPosition,
+        targetPosition: duoTargetPosition,
+        queueType: duoQueueType,
+        mic: duoMic,
+        memo,
+        createdAt: now,
+      },
+      ...prev,
+    ])
+    setIsDuoCreateModalOpen(false)
+  }
+
+  const handleDeleteDuoPost = (postId: string) => {
+    const authorKey = getCurrentDuoAuthorKey()
+    const post = duoPosts.find((item) => item.id === postId)
+    if (!post) return
+    if (!canManageDuoPosts && post.authorKey !== authorKey) {
+      window.alert('작성자, 관리자, 운영진만 삭제할 수 있습니다.')
+      return
+    }
+    if (!window.confirm('이 듀오 모집 글을 삭제할까요?')) return
+    setDuoPosts((prev) => prev.filter((item) => item.id !== postId))
+  }
+
   const handleCreateInhouseCard = () => {
     const title = inhouseCreateTitle.trim()
     const startAt = inhouseCreateStartAt.trim()
@@ -2652,7 +2953,7 @@ function App() {
       return
     }
 
-    if (loginKey === ADMIN_ACCOUNT.id.toLowerCase()) {
+    if (ADMIN_LOGIN_KEYS.includes(loginKey)) {
       if (!loginPasswordValue) {
         setAuthFeedbackType('error')
         setAuthFeedback('비밀번호를 입력해주세요.')
@@ -3351,6 +3652,34 @@ function App() {
     window.alert('공지사항이 삭제되었습니다.')
   }
 
+  const resetTopMenuCategory = (menu: string) => {
+    if (menu === '모집') {
+      setInhouseCategory(INHOUSE_CATEGORY_OPTIONS[0].value)
+      return
+    }
+    if (menu === '기록') {
+      setRecordCategoryFilter('inhouse-apply')
+      setExpandedRecordId('')
+      setDetailRecordId('')
+      setDetailGroupId('')
+      return
+    }
+    if (menu === '관리') {
+      setAdminCategory('유저관리')
+      setUserTypeFilter('전체')
+    }
+  }
+
+  const openTopMenu = (menu: string) => {
+    resetTopMenuCategory(menu)
+    setActiveMenu(menu)
+    setIsLoginPage(!currentUserLabel.trim())
+    setIsUserInfoPage(false)
+    setAuthMode('login')
+    setAuthFeedback('')
+    setPendingAccountId('')
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -3358,14 +3687,7 @@ function App() {
           <button
             className="brand-button"
             type="button"
-            onClick={() => {
-              setActiveMenu('홈')
-              setIsLoginPage(!currentUserLabel.trim())
-              setIsUserInfoPage(false)
-              setAuthMode('login')
-              setAuthFeedback('')
-              setPendingAccountId('')
-            }}
+            onClick={() => openTopMenu('홈')}
           >
             LEAGUE
           </button>
@@ -3375,14 +3697,7 @@ function App() {
                 key={menu}
                 type="button"
                 className={activeMenu === menu ? 'is-active' : ''}
-                onClick={() => {
-                  setActiveMenu(menu)
-                  setIsLoginPage(!currentUserLabel.trim())
-                  setIsUserInfoPage(false)
-                  setAuthMode('login')
-                  setAuthFeedback('')
-                  setPendingAccountId('')
-                }}
+                onClick={() => openTopMenu(menu)}
               >
                 {menu}
               </button>
@@ -3880,19 +4195,14 @@ function App() {
 
             <article className="schedule-panel" aria-label="다가오는 내전 일정">
               <header className="panel-header">
-                <button type="button" className="panel-title-link" onClick={() => setActiveMenu('내전신청')}>
+                <button type="button" className="panel-title-link" onClick={() => openTopMenu('모집')}>
                   다가오는 내전 일정
                 </button>
                 <button
                   type="button"
                   className="panel-apply-button"
                   onClick={() => {
-                    setActiveMenu('내전신청')
-                    setIsLoginPage(false)
-                    setIsUserInfoPage(false)
-                    setAuthMode('login')
-                    setAuthFeedback('')
-                    setPendingAccountId('')
+                    openTopMenu('모집')
                   }}
                 >
                   신청하기
@@ -3922,10 +4232,10 @@ function App() {
           </section>
         )}
 
-        {!isLoginPage && !isUserInfoPage && activeMenu === '내전신청' && (
+        {!isLoginPage && !isUserInfoPage && activeMenu === '모집' && (
           <section className="record-page inhouse-page">
             <header className="record-headline">
-              <h2>내전신청</h2>
+              <h2>모집</h2>
             
             </header>
 
@@ -3949,7 +4259,11 @@ function App() {
               <article className="inhouse-content-panel">
                 <div className="inhouse-content-header">
                   <h3>{currentInhouseCategory.title}</h3>
-                  {isAdminSession && (
+                  {inhouseCategory === 'duo-apply' ? (
+                    <button type="button" className="record-action-button inhouse-create-button duo-create-button" onClick={openDuoCreateModal}>
+                      글 쓰기
+                    </button>
+                  ) : isAdminSession ? (
                     <button
                       type="button"
                       className="record-action-button inhouse-create-button"
@@ -3962,9 +4276,60 @@ function App() {
                     >
                       내전 만들기
                     </button>
-                  )}
+                  ) : null}
                 </div>
-                {currentInhouseCards.length === 0 ? (
+                {inhouseCategory === 'duo-apply' ? (
+                  <section className="duo-board" aria-label="듀오 모집 목록">
+                    <div className="duo-board-head">
+                      <span>소환사</span>
+                      <span>내 포지션</span>
+                      <span>찾는 포지션</span>
+                      <span>메모</span>
+                      <span>등록</span>
+                    </div>
+                    {duoPosts.length === 0 ? (
+                      <p className="panel-empty">등록된 듀오 모집 글이 없습니다.</p>
+                    ) : (
+                      <div className="duo-post-list">
+                        {duoPosts.map((post) => (
+                          <article key={post.id} className="duo-post-row">
+                            <div className="duo-post-summoner">
+                              <div className="duo-avatar">
+                                {typeof post.profileIconId === 'number' && post.profileIconId > 0 ? (
+                                  <img
+                                    src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${post.profileIconId}.png`}
+                                    alt=""
+                                  />
+                                ) : (
+                                  post.riotId.slice(0, 1).toUpperCase()
+                                )}
+                              </div>
+                              <div className="duo-summoner-meta">
+                                <strong>{post.riotId}</strong>
+                                <span>{post.userLabel} </span>
+                              </div>
+                            </div>
+                            <span className="duo-position-chip" aria-label={getDuoPositionLabel(post.mainPosition)}>
+                              <img src={DUO_POSITION_ICON_BY_VALUE[post.mainPosition]} alt="" />
+                            </span>
+                            <span className="duo-position-chip" aria-label={getDuoPositionLabel(post.targetPosition)}>
+                              <img src={DUO_POSITION_ICON_BY_VALUE[post.targetPosition]} alt="" />
+                            </span>
+                            <p className="duo-post-memo">{post.memo}</p>
+                            <div className="duo-post-time">
+                              <span>{formatDuoCreatedAt(post.createdAt)}</span>
+                              {(canManageDuoPosts || post.authorKey === getCurrentDuoAuthorKey()) && (
+                                <button type="button" onClick={() => handleDeleteDuoPost(post.id)}>
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                ) : currentInhouseCards.length === 0 ? (
                   <p className="panel-empty">생성된 일정이 없습니다.</p>
                 ) : (
                   <div className="inhouse-card-list">
@@ -4037,7 +4402,7 @@ function App() {
               <div className="teamdraw-title-row">
                 <h2>맴버</h2>
                 <div className="teamdraw-nav-controls">
-                  <button type="button" className="teamdraw-nav-button" onClick={() => setActiveMenu('내전신청')}>
+                  <button type="button" className="teamdraw-nav-button" onClick={() => openTopMenu('모집')}>
                     뒤로가기
                   </button>
                   <button type="button" className="teamdraw-nav-button is-primary" onClick={() => setActiveMenu(TEAM_DRAW_MENU)}>
@@ -6154,6 +6519,87 @@ function App() {
                   )}
                 </div>
               )}
+            </article>
+          </section>
+        )}
+
+        {isDuoCreateModalOpen && (
+          <section className="edit-modal-backdrop" aria-label="듀오 모집 글 작성">
+            <article className="login-card duo-create-modal-card">
+              <header className="notice-modal-head">
+                <h3>듀오 모집</h3>
+                <button type="button" className="notice-modal-close" onClick={() => setIsDuoCreateModalOpen(false)}>
+                  ×
+                </button>
+              </header>
+
+              <div className="login-field-group">
+                <label htmlFor="duo-riot-id">소환사 이름</label>
+                <input
+                  id="duo-riot-id"
+                  value={duoRiotIdInput}
+                  onChange={(event) => setDuoRiotIdInput(event.target.value)}
+                  className="login-input"
+                  placeholder="플레이어 이름 + #KR1"
+                />
+              </div>
+
+              <div className="duo-form-grid">
+                <div className="login-field-group duo-position-field">
+                  <label>내 포지션</label>
+                  <div className="duo-position-select">
+                    {DUO_POSITIONS.map((position) => (
+                      <button
+                        key={`main-${position.value}`}
+                        type="button"
+                        className={duoMainPosition === position.value ? 'is-active' : ''}
+                        onClick={() => setDuoMainPosition(position.value)}
+                        aria-label={position.label}
+                      >
+                        <img src={DUO_POSITION_ICON_BY_VALUE[position.value]} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="login-field-group duo-position-field">
+                  <label>찾는 포지션</label>
+                  <div className="duo-position-select">
+                    {DUO_POSITIONS.map((position) => (
+                      <button
+                        key={`target-${position.value}`}
+                        type="button"
+                        className={duoTargetPosition === position.value ? 'is-active' : ''}
+                        onClick={() => setDuoTargetPosition(position.value)}
+                        aria-label={position.label}
+                      >
+                        <img src={DUO_POSITION_ICON_BY_VALUE[position.value]} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="login-field-group">
+                <label htmlFor="duo-memo">메모</label>
+                <textarea
+                  id="duo-memo"
+                  value={duoMemo}
+                  onChange={(event) => setDuoMemo(event.target.value)}
+                  className="notice-textarea duo-memo-input"
+                  maxLength={80}
+                />
+              </div>
+
+              {duoFeedback && <p className="auth-feedback is-error">{duoFeedback}</p>}
+
+              <div className="match-detail-input-actions">
+                <button type="button" className="signup-button" onClick={() => setIsDuoCreateModalOpen(false)}>
+                  취소
+                </button>
+                <button type="button" className="login-submit-button" onClick={() => void handleCreateDuoPost()}>
+                  등록
+                </button>
+              </div>
             </article>
           </section>
         )}
