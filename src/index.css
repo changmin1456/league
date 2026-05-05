@@ -6518,11 +6518,17 @@ body {
   min-width: 148px;
   height: 42px;
   border-radius: 4px;
-  background: #09bfa8;
-  border-color: #09bfa8;
+  background: var(--app-primary);
+  border-color: var(--app-primary);
   color: #ffffff;
   font-size: 15px;
   font-weight: 900;
+}
+
+.inhouse-content-header .inhouse-create-button:hover,
+.duo-create-button:hover {
+  background: var(--app-primary-hover);
+  border-color: var(--app-primary-hover);
 }
 
 .duo-board {
@@ -6578,8 +6584,8 @@ body {
 }
 
 .duo-filter-group button.is-active {
-  background: #09bfa8;
-  border-color: #09bfa8;
+  background: var(--app-primary);
+  border-color: var(--app-primary);
   color: #ffffff;
 }
 
@@ -6702,7 +6708,7 @@ body {
   min-height: auto;
   border: 0;
   background: transparent;
-  color: #09bfa8;
+  color: var(--app-primary);
   width: 44px;
   padding: 0;
   justify-self: center;
@@ -6714,9 +6720,9 @@ body {
 }
 
 .duo-mic-chip.is-on {
-  border-color: rgba(9, 191, 168, 0.5);
-  background: rgba(9, 191, 168, 0.16);
-  color: #09bfa8;
+  border-color: var(--app-border-strong);
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
 }
 
 .duo-post-memo {
